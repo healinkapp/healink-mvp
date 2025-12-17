@@ -4,6 +4,10 @@ import { auth, db } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { uploadToCloudinary } from '../services/cloudinary';
+import emailjs from '@emailjs/browser';
+
+// Initialize EmailJS
+emailjs.init('uH10FXkw8yv434h5P');
 
 function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false); // Closed by default on mobile
@@ -68,6 +72,31 @@ function Dashboard() {
     }
   };
 
+  const sendDay0Email = async (clientData, photoURL, uniqueToken) => {
+    const setupLink = `${window.location.origin}/setup/${uniqueToken}`;
+    
+    const templateParams = {
+      client_name: clientData.name,
+      studio_name: 'Appreciart', // TODO: Get from artist profile later
+      tattoo_photo: photoURL,
+      setup_link: setupLink,
+      to_email: clientData.email
+    };
+
+    try {
+      await emailjs.send(
+        'service_13h3kki',
+        'template_1tcang2',
+        templateParams
+      );
+      console.log('Day 0 email sent successfully to:', clientData.email);
+      return true;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      return false;
+    }
+  };
+
   const handleAddClient = async (e) => {
     e.preventDefault();
     setLoadingForm(true);
@@ -112,14 +141,28 @@ function Dashboard() {
 
       console.log('Client added successfully:', clientData);
 
-      // TODO: Send Day 0 email with magic link (next step)
+      // Send Day 0 email
+      const emailSent = await sendDay0Email(
+        { name: formData.name, email: formData.email },
+        photoURL,
+        uniqueToken
+      );
+
+      if (emailSent) {
+        console.log('✅ Client added and email sent!');
+      } else {
+        console.warn('⚠️ Client added but email failed');
+      }
 
       // Reset form and close modal
       setFormData({ name: '', email: '', tattooDate: '', photo: null });
       setPhotoPreview(null);
       setShowModal(false);
       
-      alert('✅ Client added successfully! They will receive an email to set up their account.');
+      alert(emailSent 
+        ? '✅ Client added and welcome email sent!' 
+        : '✅ Client added! (Email failed - check console)'
+      );
     } catch (error) {
       console.error('Error adding client:', error);
       alert('❌ Error: ' + error.message);
