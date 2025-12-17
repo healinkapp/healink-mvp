@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import ClientSetup from './pages/ClientSetup';
+import ClientDashboard from './pages/ClientDashboard';
 import FirebaseTest from './components/FirebaseTest';
 import EmailTest from './components/EmailTest';
 
@@ -17,6 +19,12 @@ function App() {
         
         {/* Dashboard Page */}
         <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Client Setup Page */}
+        <Route path="/setup/:token" element={<ClientSetup />} />
+        
+        {/* Client Dashboard */}
+        <Route path="/client/dashboard" element={<ClientDashboard />} />
         
         {/* Test Pages - With Nav */}
         <Route path="/test" element={
