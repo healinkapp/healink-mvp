@@ -1,6 +1,24 @@
 function Home() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      {/* Header/Nav */}
+      <header className="absolute top-0 left-0 right-0 z-10">
+        <nav className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
+          {/* Logo */}
+          <a href="/" className="text-xl font-bold text-black">
+            HEALINK
+          </a>
+          
+          {/* Login Button */}
+          <a
+            href="/login"
+            className="px-6 py-2 text-sm font-semibold text-black hover:bg-gray-100 rounded-lg transition-all"
+          >
+            Login
+          </a>
+        </nav>
+      </header>
+
       {/* Hero Section */}
       <div className="flex-1 flex items-center justify-center px-6 py-32">
         <div className="max-w-4xl mx-auto text-center">

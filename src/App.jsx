@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
+import Login from './pages/Login';
 import FirebaseTest from './components/FirebaseTest';
 import EmailTest from './components/EmailTest';
 
@@ -9,6 +10,9 @@ function App() {
       <Routes>
         {/* Landing Page - No Nav */}
         <Route path="/" element={<Home />} />
+        
+        {/* Login Page */}
+        <Route path="/login" element={<Login />} />
         
         {/* Test Pages - With Nav */}
         <Route path="/test" element={
