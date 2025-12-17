@@ -7,7 +7,7 @@ Automated aftercare platform for tattoo artists.
 - **Frontend**: React + Vite
 - **Styling**: Tailwind CSS
 - **Backend**: Firebase (Auth, Firestore, Storage, Functions)
-- **Email**: Brevo API
+- **Email**: EmailJS
 - **Routing**: React Router
 
 ## Project Structure
@@ -41,8 +41,9 @@ VITE_FIREBASE_PROJECT_ID=your_project_id
 VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
-VITE_BREVO_API_KEY=your_brevo_key
 ```
+
+**Note**: Email system uses EmailJS with credentials in `EmailTest.jsx`
 
 ### 3. Run Development Server
 
@@ -65,10 +66,9 @@ npm run build
 ## Next Steps
 
 1. Create Firebase project and add credentials to `.env.local`
-2. Set up Brevo account for email automation
-3. Implement authentication components
-4. Build dashboard features
-5. Create client PWA experience
+2. Implement authentication components
+3. Build dashboard features
+4. Create client PWA experience
 
 ## Notes
 
