@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 import FirebaseTest from './components/FirebaseTest';
 import EmailTest from './components/EmailTest';
 
@@ -13,6 +14,9 @@ function App() {
         
         {/* Login Page */}
         <Route path="/login" element={<Login />} />
+        
+        {/* Dashboard Page */}
+        <Route path="/dashboard" element={<Dashboard />} />
         
         {/* Test Pages - With Nav */}
         <Route path="/test" element={
