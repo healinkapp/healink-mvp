@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, limit } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { db, auth } from '../config/firebase';
 import { Palette, XCircle } from 'lucide-react';
@@ -26,7 +26,8 @@ export default function ClientSetup() {
         const q = query(
           collection(db, 'users'),
           where('uniqueToken', '==', token),
-          where('role', '==', 'client')
+          where('role', '==', 'client'),
+          limit(1) // Required by security rules for unauthenticated queries
         );
         
         const snapshot = await getDocs(q);

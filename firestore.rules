@@ -43,6 +43,18 @@ service cloud.firestore {
         (isArtist() && resource.data.artistId == request.auth.uid)
       );
       
+      // Allow unauthenticated read for client setup via uniqueToken
+      // This enables the /setup/:token flow before client creates account
+      allow get: if !isAuthenticated() && 
+                    resource.data.role == 'client' &&
+                    resource.data.accountSetup == false;
+      
+      // Allow unauthenticated list (query) for finding client by uniqueToken
+      allow list: if !isAuthenticated() &&
+                     request.query.limit == 1 &&
+                     resource.data.role == 'client' &&
+                     resource.data.accountSetup == false;
+      
       // CREATE ACCESS
       allow create: if isAuthenticated() && (
         // Artists can create their own account
