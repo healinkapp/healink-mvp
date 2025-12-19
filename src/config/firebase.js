@@ -3,6 +3,7 @@ import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
+import { getMessaging, isSupported } from 'firebase/messaging';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -22,6 +23,25 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
+
+// Initialize messaging (check support first)
+// We export a promise that resolves to messaging instance or null
+export const getMessagingInstance = async () => {
+  try {
+    const supported = await isSupported();
+    if (supported) {
+      const messaging = getMessaging(app);
+      console.log('✅ Firebase Messaging initialized');
+      return messaging;
+    } else {
+      console.warn('⚠️ Firebase Messaging not supported in this browser');
+      return null;
+    }
+  } catch (error) {
+    console.warn('⚠️ Firebase Messaging initialization failed:', error.message);
+    return null;
+  }
+};
 
 // Set persistence to LOCAL (survives page refresh)
 setPersistence(auth, browserLocalPersistence)

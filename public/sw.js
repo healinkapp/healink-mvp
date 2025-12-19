@@ -1,5 +1,25 @@
 // Healink PWA Service Worker
-// Version: 1.0.0
+// Version: 1.1.0 (Added Firebase Cloud Messaging)
+
+// Import Firebase SDKs for background messaging
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+
+// Initialize Firebase in Service Worker
+// Note: Config must be hardcoded here as SW can't access env vars
+const firebaseConfig = {
+  apiKey: "AIzaSyDjGQtqvpIAHz7XoZ_F0SWyzG-QLCGsSgU",
+  authDomain: "healink-mvp-27eff.firebaseapp.com",
+  projectId: "healink-mvp-27eff",
+  storageBucket: "healink-mvp-27eff.firebasestorage.app",
+  messagingSenderId: "23117856274",
+  appId: "1:23117856274:web:37ba414e208d663d0062cb"
+};
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+console.log('[Service Worker] Firebase Messaging initialized');
 
 const CACHE_VERSION = 'healink-v1';
 const CACHE_NAME = `${CACHE_VERSION}-static`;
@@ -269,6 +289,67 @@ self.addEventListener('message', (event) => {
         })
     );
   }
+});
+
+// ========================================
+// FIREBASE CLOUD MESSAGING HANDLERS
+// ========================================
+
+// Handle background push notifications
+messaging.onBackgroundMessage((payload) => {
+  console.log('[FCM] Background message received:', payload);
+
+  const notificationTitle = payload.notification?.title || 'Healink Notification';
+  const notificationOptions = {
+    body: payload.notification?.body || '',
+    icon: payload.notification?.icon || '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: payload.data?.tag || 'healink-notification',
+    data: payload.data || {},
+    requireInteraction: false, // Auto-dismiss after timeout
+    vibrate: [200, 100, 200], // Vibration pattern (mobile)
+  };
+
+  // Show notification
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+  console.log('[FCM] Notification clicked:', event.notification.tag);
+  
+  event.notification.close();
+
+  // Determine where to navigate based on notification data
+  const urlToOpen = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    })
+    .then((clientList) => {
+      // Check if app is already open
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          // Focus existing window and navigate
+          client.focus();
+          return client.navigate(urlToOpen);
+        }
+      }
+      
+      // Open new window if app not open
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// Handle notification close (optional analytics)
+self.addEventListener('notificationclose', (event) => {
+  console.log('[FCM] Notification closed:', event.notification.tag);
+  // Could send analytics event here
 });
 
 console.log('[Service Worker] Script loaded');

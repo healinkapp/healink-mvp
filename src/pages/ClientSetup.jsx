@@ -7,6 +7,7 @@ import { Palette, XCircle } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getOptimizedImageUrl, getResponsiveSrcSet, DEFAULT_SIZES } from '../utils/imageOptimization';
+import { requestPushPermission } from '../services/pushService';
 
 export default function ClientSetup() {
   const { token } = useParams();
@@ -86,6 +87,21 @@ export default function ClientSetup() {
         accountSetup: true
       });
 
+      // Request push notification permission (non-blocking)
+      // This happens in background - don't wait for it
+      requestPushPermission(clientData.id)
+        .then((result) => {
+          if (result.success) {
+            console.log('✅ Push notifications enabled');
+          } else {
+            console.log('⚠️ Push notifications not enabled:', result.error);
+          }
+        })
+        .catch((error) => {
+          console.warn('⚠️ Push permission request failed:', error);
+          // Don't block user flow - they can enable later
+        });
+
       // Redirect to client dashboard
       showToast('Account created successfully!', 'success');
       navigate('/client/dashboard');
@@ -99,6 +115,10 @@ export default function ClientSetup() {
           await updateDoc(doc(db, 'users', clientData.id), {
             accountSetup: true
           });
+          
+          // Request push notification permission (non-blocking)
+          requestPushPermission(clientData.id).catch(console.warn);
+          
           navigate('/client/dashboard');
         } catch (loginErr) {
           setError('Account exists but password incorrect');

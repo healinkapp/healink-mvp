@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../config/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { LogOut, Calendar, Flame, CheckCircle2, Clock, Sparkles, AlertCircle, Camera, Settings } from 'lucide-react';
+import { LogOut, Calendar, Flame, CheckCircle2, Clock, Sparkles, AlertCircle, Camera, Settings, Bell, X } from 'lucide-react';
 import { getUserRole } from '../utils/getUserRole';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useToast } from '../contexts/ToastContext';
 import { getOptimizedImageUrl, getResponsiveSrcSet, DEFAULT_SIZES } from '../utils/imageOptimization';
+import { requestPushPermission, getPushPermissionStatus } from '../services/pushService';
 
 export default function ClientDashboard() {
   const navigate = useNavigate();
@@ -15,6 +16,53 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [checkingRole, setCheckingRole] = useState(true);
   const [clientData, setClientData] = useState(null);
+  const [showPushBanner, setShowPushBanner] = useState(false);
+  const [requestingPermission, setRequestingPermission] = useState(false);
+
+  // Check if we should show push permission banner
+  useEffect(() => {
+    const dismissed = localStorage.getItem('healink_push_banner_dismissed');
+    const permission = getPushPermissionStatus();
+    
+    // Show banner if: not dismissed, permission not granted, and not denied
+    if (!dismissed && permission === 'default') {
+      setShowPushBanner(true);
+    }
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    if (!clientData?.id) return;
+    
+    setRequestingPermission(true);
+    
+    try {
+      const result = await requestPushPermission(clientData.id);
+      
+      if (result.success) {
+        showToast('Notifications enabled successfully!', 'success');
+        setShowPushBanner(false);
+        localStorage.setItem('healink_push_banner_dismissed', 'true');
+      } else {
+        if (result.error.includes('denied')) {
+          showToast('Notifications blocked. Please enable in browser settings.', 'error');
+          setShowPushBanner(false);
+          localStorage.setItem('healink_push_banner_dismissed', 'true');
+        } else {
+          showToast('Could not enable notifications', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Permission error:', error);
+      showToast('Failed to enable notifications', 'error');
+    } finally {
+      setRequestingPermission(false);
+    }
+  };
+
+  const handleDismissBanner = () => {
+    setShowPushBanner(false);
+    localStorage.setItem('healink_push_banner_dismissed', 'true');
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -201,6 +249,43 @@ export default function ClientDashboard() {
           </div>
         </div>
       </header>
+
+      {/* Push Notification Banner */}
+      {showPushBanner && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <Bell className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900">
+                  Enable Daily Reminders
+                </p>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Get notifications for your aftercare routine and healing tips
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={handleEnableNotifications}
+                  disabled={requestingPermission}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {requestingPermission ? 'Enabling...' : 'Enable'}
+                </button>
+                <button
+                  onClick={handleDismissBanner}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-7 space-y-5 sm:space-y-6">
