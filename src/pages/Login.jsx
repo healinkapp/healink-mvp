@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { useNavigate, Link } from 'react-router-dom';
 import { getUserRole } from '../utils/getUserRole';
@@ -24,15 +24,16 @@ function Login() {
         // Create Firebase Auth account
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-        // Create Firestore document for artist
+        // Create Firestore document for artist (using userId as document ID)
         const userData = {
           role: 'artist',
           email: email,
           createdAt: serverTimestamp()
         };
 
-        await addDoc(collection(db, 'users'), userData);
-        console.log('✅ Artist account created:', userData);
+        // Use userId as document ID (critical for security rules)
+        await setDoc(doc(db, 'users', userCredential.user.uid), userData);
+        console.log('✅ Artist account created:', userCredential.user.uid, userData);
 
         // Redirect to dashboard
         navigate('/dashboard');
