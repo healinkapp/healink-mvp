@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { uploadToCloudinary } from '../services/cloudinary';
 import emailjs from '@emailjs/browser';
-import { Users, Clock, Flame, CheckCircle2, Menu, Plus, LogOut, LayoutDashboard, Mail, Settings, ArrowLeft, ArrowRight, Camera } from 'lucide-react';
+import { Users, Clock, Flame, CheckCircle2, Plus, LogOut, LayoutDashboard, Mail, Settings, Camera } from 'lucide-react';
 import { getUserRole } from '../utils/getUserRole';
 
 /**
@@ -26,8 +26,8 @@ emailjs.init('uH10FXkw8yv434h5P');
 function Dashboard() {
   const [authReady, setAuthReady] = useState(false);
   const [checkingRole, setCheckingRole] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Closed by default on mobile
   const [showModal, setShowModal] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -278,129 +278,118 @@ function Dashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Mobile Sidebar Backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={`${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } md:translate-x-0 ${
-        sidebarOpen ? 'w-64' : 'md:w-20 w-64'
-      } bg-black text-white transition-all duration-300 flex flex-col fixed md:relative z-50 h-full`}>
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100">
+      
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex md:w-20 bg-gradient-to-b from-black via-gray-900 to-black text-white flex-col shadow-2xl border-r border-gray-800">
         {/* Logo */}
         <div className="p-6 border-b border-gray-800">
-          <h1 className={`font-bold ${sidebarOpen || 'md:text-xl'} text-2xl transition-all`}>
-            <span className="md:hidden">{sidebarOpen ? 'HEALINK' : 'H'}</span>
-            <span className="hidden md:inline">{sidebarOpen ? 'HEALINK' : 'H'}</span>
-          </h1>
+          <h1 className="font-bold text-2xl text-center text-white">H</h1>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 p-4">
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             <li>
-              <a
-                href="#"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 text-white font-medium"
-              >
+              <button className="w-full flex items-center justify-center p-3.5 rounded-xl bg-gradient-to-br from-gray-800 to-gray-700 text-white transition-all hover:from-gray-700 hover:to-gray-600 shadow-lg">
                 <LayoutDashboard className="w-5 h-5" />
-                {sidebarOpen && <span>Dashboard</span>}
-              </a>
+              </button>
             </li>
             <li>
-              <a
-                href="#"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition"
-              >
+              <button className="w-full flex items-center justify-center p-3.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all">
                 <Users className="w-5 h-5" />
-                {sidebarOpen && <span>Clients</span>}
-              </a>
+              </button>
             </li>
             <li>
-              <a
-                href="#"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition"
-              >
+              <button className="w-full flex items-center justify-center p-3.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all">
                 <Mail className="w-5 h-5" />
-                {sidebarOpen && <span>Emails</span>}
-              </a>
+              </button>
             </li>
             <li>
-              <a
-                href="#"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition"
-              >
+              <button className="w-full flex items-center justify-center p-3.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all">
                 <Settings className="w-5 h-5" />
-                {sidebarOpen && <span>Settings</span>}
-              </a>
+              </button>
             </li>
           </ul>
         </nav>
-
-        {/* Toggle Sidebar */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-4 border-t border-gray-800 hover:bg-gray-800 transition flex items-center justify-center"
-        >
-          {sidebarOpen ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
-        </button>
       </aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-4 md:px-8 py-4">
+        <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-4 md:px-8 py-4 md:py-5 shadow-sm">
           <div className="flex justify-between items-center gap-4">
-            {/* Mobile Menu Button + Title */}
+            {/* Title (removed hamburger menu) */}
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <Menu className="w-6 h-6" />
-              </button>
+              {/* Avatar - Mobile */}
+              <div className="md:hidden w-10 h-10 rounded-full bg-gradient-to-br from-black to-gray-800 flex items-center justify-center text-white font-bold shadow-lg">
+                {auth.currentUser?.email?.charAt(0).toUpperCase() || 'A'}
+              </div>
               <div>
-                <h2 className="text-xl md:text-2xl font-bold text-black">Dashboard</h2>
-                <p className="text-xs md:text-sm text-gray-500 hidden sm:block">Manage your clients' healing journeys</p>
+                <h2 className="text-xl md:text-2xl font-bold text-black tracking-tight">
+                  <span className="md:hidden">Hi, {auth.currentUser?.email?.split('@')[0]}</span>
+                  <span className="hidden md:inline">Dashboard</span>
+                </h2>
+                <p className="text-xs md:text-sm text-gray-600 mt-0.5">
+                  <span className="md:hidden">Manage your clients</span>
+                  <span className="hidden md:inline">Manage your clients' healing journeys</span>
+                </p>
               </div>
             </div>
 
-            {/* User Info + Logout */}
-            <div className="flex items-center gap-2 md:gap-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-black truncate max-w-[150px] md:max-w-none">
+            {/* Desktop User Info + Logout */}
+            <div className="hidden md:flex items-center gap-4">
+              <div className="text-right bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-200/50">
+                <p className="text-sm font-semibold text-black truncate max-w-[150px] lg:max-w-none">
                   {auth.currentUser?.email}
                 </p>
-                <p className="text-xs text-gray-500">Artist</p>
+                <p className="text-xs text-gray-500 font-medium">Artist</p>
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-2 md:px-4 border border-gray-300 rounded-lg text-xs md:text-sm font-medium hover:bg-gray-50 transition"
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-all duration-200"
               >
                 <LogOut className="w-4 h-4" />
-                Logout
+                <span>Logout</span>
               </button>
             </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-auto p-4 md:p-8">
+        <main className="flex-1 overflow-auto p-4 md:p-8 pb-20 md:pb-8">
           <div className="max-w-7xl mx-auto">
+            
+            {/* Hero Card - Attention Needed */}
+            {stats.criticalCare > 0 && (
+              <div className="bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-2xl shadow-xl p-6 sm:p-8 mb-6 sm:mb-8 text-white border-2 border-red-400/30 transform hover:scale-[1.02] transition-all duration-300">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <Flame className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-2xl sm:text-3xl font-bold mb-2">
+                      {stats.criticalCare} {stats.criticalCare === 1 ? 'Client Needs' : 'Clients Need'} Attention Today
+                    </h2>
+                    <p className="text-sm sm:text-base text-white/90 leading-relaxed">
+                      Critical healing phase (Days 0-7). These clients are at highest risk for complications. 
+                      Make sure they're following aftercare protocol.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Stats Cards - 4 Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
               
               {/* Total Clients */}
-              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+              <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 sm:p-5 border border-gray-100/50">
                 <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-5 h-5 text-gray-600" />
-                  <p className="text-sm text-gray-600">Total Clients</p>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center">
+                    <Users className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-xs font-semibold text-gray-600">Total</p>
                 </div>
                 <p className="text-2xl sm:text-3xl font-bold text-black">
                   {loadingClients ? '...' : stats.totalClients}
@@ -408,10 +397,12 @@ function Dashboard() {
               </div>
 
               {/* Active Healing */}
-              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+              <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 sm:p-5 border border-gray-100/50">
                 <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-5 h-5 text-gray-600" />
-                  <p className="text-sm text-gray-600">Active Healing</p>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                    <Clock className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-xs font-semibold text-gray-600">Active</p>
                 </div>
                 <p className="text-2xl sm:text-3xl font-bold text-black">
                   {loadingClients ? '...' : stats.activeHealing}
@@ -419,38 +410,45 @@ function Dashboard() {
               </div>
 
               {/* Critical Care - Day 0-7 */}
-              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border-2 border-orange-200">
+              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-4 sm:p-5 border-2 border-red-200">
                 <div className="flex items-center gap-2 mb-2">
-                  <Flame className="w-5 h-5 text-orange-600" />
-                  <p className="text-sm text-gray-600">Critical Care</p>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-md">
+                    <Flame className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-xs font-bold text-red-700">Critical</p>
                 </div>
-                <p className="text-2xl sm:text-3xl font-bold text-orange-600">
+                <p className="text-2xl sm:text-3xl font-bold text-red-600">
                   {loadingClients ? '...' : stats.criticalCare}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">Days 0-7 - highest risk phase</p>
+                <p className="text-[10px] text-red-700 font-semibold mt-1">Days 0-7</p>
               </div>
 
               {/* Completed Journeys */}
-              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border-2 border-green-200">
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-4 sm:p-5 border-2 border-green-200">
                 <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  <p className="text-sm text-gray-600">Completed</p>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md">
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-xs font-bold text-green-700">Healed</p>
                 </div>
                 <p className="text-2xl sm:text-3xl font-bold text-green-600">
                   {loadingClients ? '...' : stats.completed}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">30+ days</p>
+                <p className="text-[10px] text-green-700 font-semibold mt-1">30+ days</p>
               </div>
 
             </div>
 
             {/* Clients List */}
-            <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <h2 className="text-xl md:text-2xl font-bold text-black">Your Clients</h2>
+            <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-5 md:p-7 border border-gray-100/50">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-7">
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold text-black mb-1">Your Clients</h2>
+                  <p className="text-sm text-gray-600 hidden md:block">Track and manage healing journeys</p>
+                </div>
                 <button 
                   onClick={() => setShowModal(true)}
-                  className="flex items-center gap-2 w-full sm:w-auto px-4 md:px-6 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition text-sm md:text-base"
+                  className="hidden md:flex items-center gap-2.5 w-full sm:w-auto px-5 md:px-6 py-3 bg-gradient-to-r from-black to-gray-800 text-white rounded-xl font-bold hover:from-gray-800 hover:to-gray-700 transition-all duration-200 text-sm md:text-base shadow-lg hover:shadow-xl"
                 >
                   <Plus className="w-5 h-5" />
                   Add Client
@@ -459,70 +457,101 @@ function Dashboard() {
 
               {loadingClients ? (
                 <div className="text-center py-12 text-gray-500">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-black mx-auto mb-3"></div>
                   Loading clients...
                 </div>
               ) : clients.length === 0 ? (
-                <div className="text-center py-16">
+                <div className="text-center py-16 px-4">
                   <div className="text-gray-300 mb-4">
-                    <Users className="w-16 h-16 mx-auto mb-3" />
+                    <Users className="w-20 h-20 mx-auto mb-4" />
                   </div>
-                  <p className="text-gray-500 text-lg font-medium mb-2">
+                  <p className="text-gray-700 text-lg font-bold mb-2">
                     Add your first client to start tracking
                   </p>
-                  <p className="text-gray-400 text-sm max-w-md mx-auto">
+                  <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
                     They'll get science-backed aftercare emails automatically—
                     so you don't have to answer the same questions over DM
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {clients.map((client) => (
-                    <div 
-                      key={client.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
-                    >
-                      {/* Tattoo Photo */}
-                      {client.tattooPhoto && (
-                        <img 
-                          src={client.tattooPhoto}
-                          alt={`${client.name}'s tattoo`}
-                          className="w-full h-40 sm:h-48 object-cover rounded-lg mb-4"
-                        />
-                      )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                  {clients.map((client) => {
+                    const healingDay = client.healingDay || 0;
+                    const isCritical = healingDay <= 7;
+                    const isHealed = healingDay >= 30 || client.status === 'healed';
+                    
+                    return (
+                      <div 
+                        key={client.id}
+                        className="group border border-gray-200 rounded-2xl p-0 hover:shadow-xl hover:border-gray-300 transition-all duration-300 bg-white overflow-hidden transform hover:scale-[1.02]"
+                      >
+                        {/* Tattoo Photo */}
+                        {client.tattooPhoto && (
+                          <div className="relative overflow-hidden">
+                            <img 
+                              src={client.tattooPhoto}
+                              alt={`${client.name}'s tattoo`}
+                              className="w-full h-44 sm:h-52 object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            {/* Status Badge Overlay */}
+                            <div className="absolute top-3 right-3">
+                              <span className={`text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm ${
+                                isHealed
+                                  ? 'bg-green-500/90 text-white' 
+                                  : isCritical
+                                  ? 'bg-red-500/90 text-white'
+                                  : 'bg-blue-500/90 text-white'
+                              }`}>
+                                {isHealed
+                                  ? <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Healed</span>
+                                  : `Day ${healingDay}`}
+                              </span>
+                            </div>
+                          </div>
+                        )}
 
-                      {/* Client Info */}
-                      <div className="space-y-2">
-                        <h3 className="font-bold text-base md:text-lg text-black truncate">{client.name}</h3>
-                        <p className="text-xs md:text-sm text-gray-600 truncate">{client.email}</p>
-                        
-                        {/* Healing Status */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
-                            client.status === 'healed' 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-blue-100 text-blue-700'
-                          }`}>
-                            {client.status === 'healed' 
-                              ? '✓ Healed' 
-                              : `Day ${client.healingDay}/30`}
-                          </span>
+                        {/* Client Info */}
+                        <div className="p-4 space-y-3">
+                          <div>
+                            <h3 className="font-bold text-base md:text-lg text-black truncate">{client.name}</h3>
+                            <p className="text-xs md:text-sm text-gray-500 truncate">{client.email}</p>
+                          </div>
+
+                          {/* Progress Bar */}
+                          <div className="w-full bg-gray-200 rounded-full h-2 shadow-inner">
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-500 ${
+                                isHealed 
+                                  ? 'bg-gradient-to-r from-green-500 to-green-600'
+                                  : isCritical
+                                  ? 'bg-gradient-to-r from-red-500 to-red-600'
+                                  : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                              }`}
+                              style={{ width: `${Math.min((healingDay / 30) * 100, 100)}%` }}
+                            />
+                          </div>
+
+                          {/* Tattoo Date */}
+                          <div className="flex items-center justify-between pt-1">
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                              <p className="text-xs text-gray-500 font-medium">
+                                {new Date(client.tattooDate).toLocaleDateString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })}
+                              </p>
+                            </div>
+                            {!isHealed && (
+                              <p className="text-xs font-semibold text-gray-600">
+                                {30 - healingDay} days left
+                              </p>
+                            )}
+                          </div>
                         </div>
-
-                        {/* Progress Bar */}
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-black h-2 rounded-full transition-all"
-                            style={{ width: `${(client.healingDay / 30) * 100}%` }}
-                          />
-                        </div>
-
-                        {/* Tattoo Date */}
-                        <p className="text-xs text-gray-500">
-                          Tattoo: {new Date(client.tattooDate).toLocaleDateString()}
-                        </p>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -530,27 +559,112 @@ function Dashboard() {
         </main>
       </div>
 
+      {/* Settings Menu Overlay - Mobile */}
+      {showSettingsMenu && (
+        <>
+          <div 
+            className="md:hidden fixed inset-0 bg-black/40 z-40"
+            onClick={() => setShowSettingsMenu(false)}
+          ></div>
+          <div className="md:hidden fixed bottom-20 right-4 bg-white rounded-2xl shadow-2xl z-50 border border-gray-200 overflow-hidden min-w-[200px]">
+            <div className="p-3 border-b border-gray-100">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Account</p>
+              <p className="text-sm font-bold text-black truncate mt-1">{auth.currentUser?.email}</p>
+            </div>
+            <button
+              onClick={() => {
+                setShowSettingsMenu(false);
+                handleLogout();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="font-semibold">Logout</span>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Bottom Tab Bar - Mobile Only */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+        <div className="flex items-center justify-around px-1 py-2 pb-safe">
+          
+          {/* Dashboard */}
+          <button className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-black to-gray-800 flex items-center justify-center shadow-md">
+              <LayoutDashboard className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-[9px] font-bold text-black mt-0.5">Dashboard</span>
+          </button>
+
+          {/* Clients */}
+          <button className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1">
+            <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
+              <Users className="w-5 h-5 text-gray-600" />
+            </div>
+            <span className="text-[9px] font-semibold text-gray-500 mt-0.5">Clients</span>
+          </button>
+
+          {/* Add Client (Center - Larger) */}
+          <button 
+            onClick={() => setShowModal(true)}
+            className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1 -mt-3"
+          >
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-xl border-3 border-white">
+              <Plus className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-[9px] font-bold text-blue-600 mt-0.5">Add</span>
+          </button>
+
+          {/* Messages */}
+          <button className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1">
+            <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
+              <Mail className="w-5 h-5 text-gray-600" />
+            </div>
+            <span className="text-[9px] font-semibold text-gray-500 mt-0.5">Messages</span>
+          </button>
+
+          {/* Settings */}
+          <button 
+            onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+            className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1"
+          >
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
+              showSettingsMenu ? 'bg-gray-900' : 'bg-gray-100'
+            }`}>
+              <Settings className={`w-5 h-5 transition-colors ${
+                showSettingsMenu ? 'text-white' : 'text-gray-600'
+              }`} />
+            </div>
+            <span className={`text-[9px] font-semibold mt-0.5 transition-colors ${
+              showSettingsMenu ? 'text-black' : 'text-gray-500'
+            }`}>Settings</span>
+          </button>
+
+        </div>
+      </nav>
+
       {/* Add Client Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-xl sm:text-2xl font-bold text-black">Add Client</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200/50">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-xl sm:text-2xl font-bold text-black">Add New Client</h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-black text-3xl leading-none"
+                className="text-gray-400 hover:text-black text-3xl leading-none transition-colors"
               >
                 ×
               </button>
             </div>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
               Upload their fresh tattoo. We'll handle the aftercare education for the next 30 days.
             </p>
 
-            <form onSubmit={handleAddClient} className="space-y-4">
+            <form onSubmit={handleAddClient} className="space-y-5">
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   Client Name
                 </label>
                 <input
@@ -558,29 +672,30 @@ function Dashboard() {
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base font-medium transition-all"
                   placeholder="John Doe"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Client Email (for aftercare updates)
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Client Email
                 </label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base font-medium transition-all"
                   placeholder="john@example.com"
                 />
+                <p className="text-xs text-gray-500 mt-2 font-medium">They'll receive automated aftercare emails</p>
               </div>
 
               {/* Tattoo Photo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   Fresh Tattoo Photo (Day 0) *
                 </label>
                 <input
@@ -589,20 +704,20 @@ function Dashboard() {
                   capture="environment"
                   onChange={handlePhotoChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-black file:text-white file:font-semibold hover:file:bg-gray-800"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gradient-to-r file:from-black file:to-gray-800 file:text-white file:font-bold hover:file:from-gray-800 hover:file:to-gray-700 file:transition-all file:shadow-md"
                 />
-                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5 font-medium">
                   <Camera className="w-4 h-4" />
                   Take or upload a photo of the fresh tattoo
                 </p>
                 
                 {/* Photo Preview */}
                 {photoPreview && (
-                  <div className="mt-3">
+                  <div className="mt-4">
                     <img
                       src={photoPreview}
                       alt="Tattoo preview"
-                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
+                      className="w-full h-48 object-cover rounded-xl border-2 border-gray-200 shadow-md"
                     />
                   </div>
                 )}
@@ -613,14 +728,14 @@ function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition text-base"
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl font-bold hover:bg-gray-50 transition-all text-base"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loadingForm}
-                  className="flex-1 px-4 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400 transition text-base"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-black to-gray-800 text-white rounded-xl font-bold hover:from-gray-800 hover:to-gray-700 disabled:from-gray-400 disabled:to-gray-400 transition-all text-base shadow-lg"
                 >
                   {loadingForm ? 'Adding...' : 'Add Client'}
                 </button>

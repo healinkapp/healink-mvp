@@ -1,17 +1,21 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, Clock, Shield } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock, Shield, Menu, X } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Home() {
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-white">
       
       {/* Header */}
-      <header className="border-b border-gray-200">
+      <header className="border-b border-gray-200 sticky top-0 bg-white z-40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-black">Healink</h1>
-          <div className="flex items-center gap-4">
+          
+          {/* Desktop Menu */}
+          <div className="hidden sm:flex items-center gap-4">
             <button
               onClick={() => navigate('/login')}
               className="text-sm text-gray-700 hover:text-black transition"
@@ -24,6 +28,58 @@ export default function Home() {
             >
               Get Started
             </button>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="sm:hidden p-2 text-gray-700 hover:text-black transition"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+
+        {/* Mobile Menu Fullscreen */}
+        <div
+          className={`fixed inset-0 bg-white z-50 transform transition-transform duration-300 ease-in-out sm:hidden ${
+            mobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
+          }`}
+        >
+          <div className="flex flex-col h-full">
+            {/* Header com Close Button */}
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+              <h1 className="text-2xl font-bold text-black">Healink</h1>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 text-gray-700 hover:text-black transition"
+                aria-label="Close menu"
+              >
+                <X size={28} />
+              </button>
+            </div>
+
+            {/* Menu Items - Centralized and Large */}
+            <nav className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/login');
+                }}
+                className="w-full max-w-sm text-center px-6 py-4 text-lg text-gray-700 hover:bg-gray-50 rounded-xl transition font-medium border-2 border-gray-200"
+              >
+                Login
+              </button>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/login');
+                }}
+                className="w-full max-w-sm text-center px-6 py-4 text-lg bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition"
+              >
+                Get Started
+              </button>
+            </nav>
           </div>
         </div>
       </header>
