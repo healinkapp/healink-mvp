@@ -96,6 +96,25 @@ service cloud.firestore {
       );
     }
     
+    // Notifications collection
+    match /notifications/{notificationId} {
+      // Artists can read their own notifications
+      allow read: if isAuthenticated() && 
+                     resource.data.artistId == request.auth.uid;
+      
+      // Artists can create notifications for themselves
+      allow create: if isAuthenticated() && 
+                       request.resource.data.artistId == request.auth.uid;
+      
+      // Artists can update their own notifications (mark as read)
+      allow update: if isAuthenticated() && 
+                       resource.data.artistId == request.auth.uid;
+      
+      // Artists can delete their own notifications
+      allow delete: if isAuthenticated() && 
+                       resource.data.artistId == request.auth.uid;
+    }
+    
     // Deny all other collections by default
     match /{document=**} {
       allow read, write: if false;

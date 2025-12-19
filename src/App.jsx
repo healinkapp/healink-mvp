@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
+import Notifications from './pages/Notifications';
 import ClientSetup from './pages/ClientSetup';
 import ClientDashboard from './pages/ClientDashboard';
 import FirebaseTest from './components/FirebaseTest';
@@ -50,6 +51,9 @@ function App() {
           
           {/* Dashboard Page */}
           <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* Notifications Page */}
+          <Route path="/notifications" element={<Notifications />} />
           
           {/* Settings Page */}
           <Route path="/settings" element={<Settings />} />

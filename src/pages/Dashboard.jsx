@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy, doc, getDoc } from 'firebase/firestore';
 import { uploadToCloudinary } from '../services/cloudinary';
 import emailjs from '@emailjs/browser';
-import { Users, Clock, Flame, CheckCircle2, Plus, LogOut, LayoutDashboard, Mail, Settings, Camera } from 'lucide-react';
+import { Users, Clock, Flame, CheckCircle2, Plus, LogOut, LayoutDashboard, Bell, Settings, Camera } from 'lucide-react';
 import { getUserRole } from '../utils/getUserRole';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -13,14 +13,14 @@ import ClientCardSkeleton from '../components/ClientCardSkeleton';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Onboarding from '../components/Onboarding';
 import { getOptimizedImageUrl, getResponsiveSrcSet, DEFAULT_SIZES } from '../utils/imageOptimization';
+import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 
 /**
  * ICON REFERENCE (Lucide React)
  * 
  * Stats: Users, Clock, Flame, CheckCircle2
- * Navigation: LayoutDashboard, Users, Mail, Settings
- * Actions: Plus, Menu, LogOut, Camera
- * Direction: ArrowLeft, ArrowRight
+ * Navigation: LayoutDashboard, Bell, Settings
+ * Actions: Plus, LogOut, Camera
  * 
  * Sizes: w-4 h-4 (small), w-5 h-5 (normal), w-6 h-6 (large)
  * Colors: text-gray-600 (default), text-orange-600 (warning), text-green-600 (success), text-black
@@ -63,6 +63,7 @@ function Dashboard() {
   });
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const unreadCount = useUnreadNotifications();
 
   // Check auth and role - Artists only
   useEffect(() => {
@@ -425,13 +426,16 @@ function Dashboard() {
               </button>
             </li>
             <li>
-              <button className="w-full flex items-center justify-center p-3.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all">
-                <Users className="w-5 h-5" />
-              </button>
-            </li>
-            <li>
-              <button className="w-full flex items-center justify-center p-3.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all">
-                <Mail className="w-5 h-5" />
+              <button 
+                onClick={() => navigate('/notifications')}
+                className="w-full relative flex items-center justify-center p-3.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </button>
             </li>
             <li>
@@ -743,14 +747,6 @@ function Dashboard() {
             <span className="text-[9px] font-bold text-black mt-0.5">Dashboard</span>
           </button>
 
-          {/* Clients */}
-          <button className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1">
-            <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
-              <Users className="w-5 h-5 text-gray-600" />
-            </div>
-            <span className="text-[9px] font-semibold text-gray-500 mt-0.5">Clients</span>
-          </button>
-
           {/* Add Client (Center - Larger) */}
           <button 
             onClick={() => setShowModal(true)}
@@ -762,12 +758,20 @@ function Dashboard() {
             <span className="text-[9px] font-bold text-blue-600 mt-0.5">Add</span>
           </button>
 
-          {/* Messages */}
-          <button className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1">
-            <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
-              <Mail className="w-5 h-5 text-gray-600" />
+          {/* Notifications */}
+          <button 
+            onClick={() => navigate('/notifications')}
+            className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1 relative"
+          >
+            <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center relative">
+              <Bell className="w-5 h-5 text-gray-600" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </div>
-            <span className="text-[9px] font-semibold text-gray-500 mt-0.5">Messages</span>
+            <span className="text-[9px] font-semibold text-gray-500 mt-0.5">Alerts</span>
           </button>
 
           {/* Settings */}
