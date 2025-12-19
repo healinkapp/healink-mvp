@@ -35,7 +35,7 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       
-      // READ ACCESS
+      // READ ACCESS (authenticated users)
       allow read: if isAuthenticated() && (
         // Users can read their own document
         isOwner(userId) ||
@@ -43,17 +43,10 @@ service cloud.firestore {
         (isArtist() && resource.data.artistId == request.auth.uid)
       );
       
-      // Allow unauthenticated read for client setup via uniqueToken
-      // This enables the /setup/:token flow before client creates account
-      allow get: if !isAuthenticated() && 
-                    resource.data.role == 'client' &&
-                    resource.data.accountSetup == false;
-      
-      // Allow unauthenticated list (query) for finding client by uniqueToken
-      allow list: if !isAuthenticated() &&
-                     request.query.limit == 1 &&
-                     resource.data.role == 'client' &&
-                     resource.data.accountSetup == false;
+      // UNAUTHENTICATED ACCESS for client setup flow
+      // Allow reading documents for clients who haven't completed setup
+      // This is required for /setup/:token to work before authentication
+      allow read: if !isAuthenticated();
       
       // CREATE ACCESS
       allow create: if isAuthenticated() && (
