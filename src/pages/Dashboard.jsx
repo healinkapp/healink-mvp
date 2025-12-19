@@ -1,32 +1,97 @@
 import { useState, useEffect } from 'react';
-import { signOut } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { uploadToCloudinary } from '../services/cloudinary';
 import emailjs from '@emailjs/browser';
+import { Users, Clock, Flame, CheckCircle2, Menu, Plus, LogOut, LayoutDashboard, Mail, Settings, ArrowLeft, ArrowRight, Camera } from 'lucide-react';
+import { getUserRole } from '../utils/getUserRole';
+
+/**
+ * ICON REFERENCE (Lucide React)
+ * 
+ * Stats: Users, Clock, Flame, CheckCircle2
+ * Navigation: LayoutDashboard, Users, Mail, Settings
+ * Actions: Plus, Menu, LogOut, Camera
+ * Direction: ArrowLeft, ArrowRight
+ * 
+ * Sizes: w-4 h-4 (small), w-5 h-5 (normal), w-6 h-6 (large)
+ * Colors: text-gray-600 (default), text-orange-600 (warning), text-green-600 (success), text-black
+ */
 
 // Initialize EmailJS
 emailjs.init('uH10FXkw8yv434h5P');
 
 function Dashboard() {
+  const [authReady, setAuthReady] = useState(false);
+  const [checkingRole, setCheckingRole] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false); // Closed by default on mobile
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    tattooDate: '',
     photo: null
   });
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loadingForm, setLoadingForm] = useState(false);
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(true);
+  const [stats, setStats] = useState({
+    totalClients: 0,
+    activeHealing: 0,
+    criticalCare: 0,
+    completed: 0
+  });
   const navigate = useNavigate();
+
+  // Check auth and role - Artists only
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      // Verify user is an artist
+      const role = await getUserRole(user.email);
+      
+      if (role !== 'artist') {
+        console.log('❌ Not an artist, redirecting...');
+        if (role === 'client') {
+          navigate('/client/dashboard');
+        } else {
+          await signOut(auth);
+          navigate('/login');
+        }
+        return;
+      }
+
+      console.log('✅ Dashboard: Artist authenticated:', user.email);
+      setAuthReady(true);
+      setCheckingRole(false);
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
+
+  // Debug auth state
+  useEffect(() => {
+    console.log('🔐 Auth state:', {
+      user: auth.currentUser,
+      uid: auth.currentUser?.uid,
+      email: auth.currentUser?.email
+    });
+  }, []);
 
   // Fetch clients in real-time
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) {
+      console.log('❌ No authenticated user');
+      return;
+    }
+
+    console.log('🔍 Fetching clients for artist:', auth.currentUser.uid);
 
     // Query clients for this artist
     const q = query(
@@ -37,14 +102,50 @@ function Dashboard() {
     );
 
     // Real-time listener
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const clientsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setClients(clientsData);
-      setLoadingClients(false);
-    });
+    const unsubscribe = onSnapshot(
+      q, 
+      (snapshot) => {
+        console.log('📊 Query returned', snapshot.docs.length, 'clients');
+        
+        const clientsData = snapshot.docs.map(doc => {
+          const data = { id: doc.id, ...doc.data() };
+          console.log('Client:', data);
+          return data;
+        });
+        
+        // Calculate stats
+        const totalClients = clientsData.length;
+        const activeHealing = clientsData.filter(c => c.status === 'healing').length;
+        const criticalCare = clientsData.filter(c => 
+          c.status === 'healing' && c.healingDay >= 0 && c.healingDay <= 7
+        ).length;
+        const completed = clientsData.filter(c => 
+          c.healingDay >= 30 || c.status === 'healed'
+        ).length;
+        
+        console.log('📈 Stats calculated:', {
+          totalClients,
+          activeHealing,
+          criticalCare,
+          completed
+        });
+        
+        setClients(clientsData);
+        setStats({
+          totalClients,
+          activeHealing,
+          criticalCare,
+          completed
+        });
+        setLoadingClients(false);
+      },
+      (error) => {
+        console.error('❌ Firestore query error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        setLoadingClients(false);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
@@ -110,12 +211,6 @@ function Dashboard() {
         console.log('Photo uploaded to Cloudinary:', photoURL);
       }
 
-      // Calculate healing day (days since tattoo)
-      const tattooDate = new Date(formData.tattooDate);
-      const today = new Date();
-      const daysSince = Math.floor((today - tattooDate) / (1000 * 60 * 60 * 24));
-      const healingDay = Math.max(0, Math.min(daysSince, 30));
-
       // Generate unique token for magic link
       const uniqueToken = Math.random().toString(36).substring(2, 15) + 
                          Math.random().toString(36).substring(2, 15);
@@ -126,12 +221,12 @@ function Dashboard() {
         name: formData.name,
         email: formData.email,
         artistId: auth.currentUser.uid,
-        tattooDate: formData.tattooDate,
+        tattooDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD format (today)
         tattooPhoto: photoURL,
-        profilePhoto: photoURL, // Use tattoo photo as initial profile
-        healingDay: healingDay,
-        status: healingDay >= 30 ? 'healed' : 'healing',
-        accountSetup: false, // Client needs to set password
+        profilePhoto: photoURL,
+        healingDay: 0, // Always starts at Day 0
+        status: 'healing', // Always healing when just added
+        accountSetup: false,
         photos: photoURL ? [photoURL] : [],
         uniqueToken: uniqueToken,
         createdAt: serverTimestamp()
@@ -155,7 +250,7 @@ function Dashboard() {
       }
 
       // Reset form and close modal
-      setFormData({ name: '', email: '', tattooDate: '', photo: null });
+      setFormData({ name: '', email: '', photo: null });
       setPhotoPreview(null);
       setShowModal(false);
       
@@ -170,6 +265,17 @@ function Dashboard() {
       setLoadingForm(false);
     }
   };
+
+  if (checkingRole || !authReady) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -203,7 +309,7 @@ function Dashboard() {
                 href="#"
                 className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 text-white font-medium"
               >
-                <span>📊</span>
+                <LayoutDashboard className="w-5 h-5" />
                 {sidebarOpen && <span>Dashboard</span>}
               </a>
             </li>
@@ -212,7 +318,7 @@ function Dashboard() {
                 href="#"
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition"
               >
-                <span>👥</span>
+                <Users className="w-5 h-5" />
                 {sidebarOpen && <span>Clients</span>}
               </a>
             </li>
@@ -221,7 +327,7 @@ function Dashboard() {
                 href="#"
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition"
               >
-                <span>📧</span>
+                <Mail className="w-5 h-5" />
                 {sidebarOpen && <span>Emails</span>}
               </a>
             </li>
@@ -230,7 +336,7 @@ function Dashboard() {
                 href="#"
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition"
               >
-                <span>⚙️</span>
+                <Settings className="w-5 h-5" />
                 {sidebarOpen && <span>Settings</span>}
               </a>
             </li>
@@ -240,9 +346,9 @@ function Dashboard() {
         {/* Toggle Sidebar */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-4 border-t border-gray-800 hover:bg-gray-800 transition"
+          className="p-4 border-t border-gray-800 hover:bg-gray-800 transition flex items-center justify-center"
         >
-          {sidebarOpen ? '←' : '→'}
+          {sidebarOpen ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
         </button>
       </aside>
 
@@ -257,11 +363,11 @@ function Dashboard() {
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
               >
-                <span className="text-2xl">☰</span>
+                <Menu className="w-6 h-6" />
               </button>
               <div>
                 <h2 className="text-xl md:text-2xl font-bold text-black">Dashboard</h2>
-                <p className="text-xs md:text-sm text-gray-500 hidden sm:block">Welcome back!</p>
+                <p className="text-xs md:text-sm text-gray-500 hidden sm:block">Manage your clients' healing journeys</p>
               </div>
             </div>
 
@@ -275,8 +381,9 @@ function Dashboard() {
               </div>
               <button
                 onClick={handleLogout}
-                className="px-3 py-2 md:px-4 border border-gray-300 rounded-lg text-xs md:text-sm font-medium hover:bg-gray-50 transition"
+                className="flex items-center gap-2 px-3 py-2 md:px-4 border border-gray-300 rounded-lg text-xs md:text-sm font-medium hover:bg-gray-50 transition"
               >
+                <LogOut className="w-4 h-4" />
                 Logout
               </button>
             </div>
@@ -286,22 +393,55 @@ function Dashboard() {
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-              <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Total Clients</p>
-                <p className="text-2xl md:text-3xl font-bold text-black">{clients.length}</p>
-              </div>
-              <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Active Healing</p>
-                <p className="text-2xl md:text-3xl font-bold text-black">
-                  {clients.filter(c => c.status === 'healing').length}
+            {/* Stats Cards - 4 Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              
+              {/* Total Clients */}
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-5 h-5 text-gray-600" />
+                  <p className="text-sm text-gray-600">Total Clients</p>
+                </div>
+                <p className="text-2xl sm:text-3xl font-bold text-black">
+                  {loadingClients ? '...' : stats.totalClients}
                 </p>
               </div>
-              <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Emails Sent</p>
-                <p className="text-2xl md:text-3xl font-bold text-black">0</p>
+
+              {/* Active Healing */}
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-5 h-5 text-gray-600" />
+                  <p className="text-sm text-gray-600">Active Healing</p>
+                </div>
+                <p className="text-2xl sm:text-3xl font-bold text-black">
+                  {loadingClients ? '...' : stats.activeHealing}
+                </p>
               </div>
+
+              {/* Critical Care - Day 0-7 */}
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border-2 border-orange-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Flame className="w-5 h-5 text-orange-600" />
+                  <p className="text-sm text-gray-600">Critical Care</p>
+                </div>
+                <p className="text-2xl sm:text-3xl font-bold text-orange-600">
+                  {loadingClients ? '...' : stats.criticalCare}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Days 0-7 - highest risk phase</p>
+              </div>
+
+              {/* Completed Journeys */}
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border-2 border-green-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <p className="text-sm text-gray-600">Completed</p>
+                </div>
+                <p className="text-2xl sm:text-3xl font-bold text-green-600">
+                  {loadingClients ? '...' : stats.completed}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">30+ days</p>
+              </div>
+
             </div>
 
             {/* Clients List */}
@@ -310,9 +450,10 @@ function Dashboard() {
                 <h2 className="text-xl md:text-2xl font-bold text-black">Your Clients</h2>
                 <button 
                   onClick={() => setShowModal(true)}
-                  className="w-full sm:w-auto px-4 md:px-6 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition text-sm md:text-base"
+                  className="flex items-center gap-2 w-full sm:w-auto px-4 md:px-6 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition text-sm md:text-base"
                 >
-                  + Add Client
+                  <Plus className="w-5 h-5" />
+                  Add Client
                 </button>
               </div>
 
@@ -321,14 +462,17 @@ function Dashboard() {
                   Loading clients...
                 </div>
               ) : clients.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 mb-4">No clients yet</p>
-                  <button 
-                    onClick={() => setShowModal(true)}
-                    className="px-6 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition"
-                  >
-                    Add Your First Client
-                  </button>
+                <div className="text-center py-16">
+                  <div className="text-gray-300 mb-4">
+                    <Users className="w-16 h-16 mx-auto mb-3" />
+                  </div>
+                  <p className="text-gray-500 text-lg font-medium mb-2">
+                    Add your first client to start tracking
+                  </p>
+                  <p className="text-gray-400 text-sm max-w-md mx-auto">
+                    They'll get science-backed aftercare emails automatically—
+                    so you don't have to answer the same questions over DM
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -353,15 +497,14 @@ function Dashboard() {
                         
                         {/* Healing Status */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs md:text-sm font-semibold text-black whitespace-nowrap">
-                            Day {client.healingDay}/30
-                          </span>
                           <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
                             client.status === 'healed' 
                               ? 'bg-green-100 text-green-700' 
                               : 'bg-blue-100 text-blue-700'
                           }`}>
-                            {client.status === 'healed' ? '✓ Healed' : '⏱ Healing'}
+                            {client.status === 'healed' 
+                              ? '✓ Healed' 
+                              : `Day ${client.healingDay}/30`}
                           </span>
                         </div>
 
@@ -391,8 +534,8 @@ function Dashboard() {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-md w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl sm:text-2xl font-bold text-black">Add New Client</h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-xl sm:text-2xl font-bold text-black">Add Client</h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-400 hover:text-black text-3xl leading-none"
@@ -400,6 +543,9 @@ function Dashboard() {
                 ×
               </button>
             </div>
+            <p className="text-sm text-gray-600 mb-6">
+              Upload their fresh tattoo. We'll handle the aftercare education for the next 30 days.
+            </p>
 
             <form onSubmit={handleAddClient} className="space-y-4">
               {/* Name */}
@@ -420,7 +566,7 @@ function Dashboard() {
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
+                  Client Email (for aftercare updates)
                 </label>
                 <input
                   type="email"
@@ -432,26 +578,10 @@ function Dashboard() {
                 />
               </div>
 
-              {/* Tattoo Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tattoo Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.tattooDate}
-                  onChange={(e) => setFormData({...formData, tattooDate: e.target.value})}
-                  required
-                  max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base"
-                />
-                <p className="text-xs text-gray-500 mt-1">When did they get the tattoo?</p>
-              </div>
-
               {/* Tattoo Photo */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tattoo Photo *
+                  Fresh Tattoo Photo (Day 0) *
                 </label>
                 <input
                   type="file"
@@ -461,8 +591,9 @@ function Dashboard() {
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-black file:text-white file:font-semibold hover:file:bg-gray-800"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  📸 Take or upload a photo of the fresh tattoo
+                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                  <Camera className="w-4 h-4" />
+                  Take or upload a photo of the fresh tattoo
                 </p>
                 
                 {/* Photo Preview */}

@@ -1,94 +1,281 @@
-function Home() {
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, CheckCircle2, Clock, Shield } from 'lucide-react';
+
+export default function Home() {
+  const navigate = useNavigate();
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Header/Nav */}
-      <header className="absolute top-0 left-0 right-0 z-10">
-        <nav className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
-          {/* Logo */}
-          <a href="/" className="text-xl font-bold text-black">
-            HEALINK
-          </a>
-          
-          {/* Login Button */}
-          <a
-            href="/login"
-            className="px-6 py-2 text-sm font-semibold text-black hover:bg-gray-100 rounded-lg transition-all"
-          >
-            Login
-          </a>
-        </nav>
+    <div className="min-h-screen bg-white">
+      
+      {/* Header */}
+      <header className="border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-black">Healink</h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/login')}
+              className="text-sm text-gray-700 hover:text-black transition"
+            >
+              Login
+            </button>
+            <button
+              onClick={() => navigate('/login')}
+              className="px-4 py-2 bg-black text-white text-sm rounded-lg font-semibold hover:bg-gray-800 transition"
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Hero Section */}
-      <div className="flex-1 flex items-center justify-center px-6 py-32">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Overline */}
-          <p className="text-sm uppercase tracking-wider text-gray-500 mb-8 font-medium">
-            Stop answering the same questions
-          </p>
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-32">
+        <div className="max-w-3xl">
           
-          {/* Logo */}
-          <h1 className="text-7xl md:text-8xl font-extrabold text-black mb-6 tracking-tight">
-            HEALINK
-          </h1>
-          
-          {/* Tagline */}
-          <p className="text-2xl md:text-3xl text-gray-700 font-semibold mb-6">
-            Your clients heal. You save time.
-          </p>
-          
-          {/* Description */}
-          <p className="text-lg md:text-xl text-gray-600 mb-4">
-            30 days. 7 emails. Zero repetition.
-          </p>
-          <p className="text-lg md:text-xl text-gray-600 mb-12">
-            Automatic aftercare that actually educates.
-          </p>
-          
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a
-              href="/dashboard"
-              className="w-full sm:w-auto px-10 py-4 bg-black text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-            >
-              Start Free Trial
-            </a>
-            <a
-              href="#how"
-              className="w-full sm:w-auto px-10 py-4 border-2 border-black text-black rounded-xl font-semibold text-lg hover:bg-gray-50 transition-all duration-200"
-            >
-              See How It Works
-            </a>
-          </div>
-        </div>
-      </div>
-      
-      {/* Footer */}
-      <footer className="border-t border-gray-200 py-8">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            {/* Links */}
-            <div className="flex gap-6 text-sm text-gray-600">
-              <a href="#about" className="hover:text-black transition-colors">
-                About
-              </a>
-              <a href="#contact" className="hover:text-black transition-colors">
-                Contact
-              </a>
-              <a href="#privacy" className="hover:text-black transition-colors">
-                Privacy
-              </a>
-            </div>
-            
-            {/* Copyright */}
-            <p className="text-sm text-gray-500">
-              © 2024 Healink. Built for tattoo artists.
+          {/* Problem Statement (Scientific Hook) */}
+          <div className="inline-block px-4 py-2 bg-orange-50 border border-orange-200 rounded-full mb-6">
+            <p className="text-sm font-medium text-orange-700">
+              30% of tattoos lose color due to improper aftercare in the first 7 days
             </p>
           </div>
+
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-black mb-6 leading-tight">
+            Your tattoo is healing.<br/>
+            <span className="text-gray-600">Know what's happening.</span>
+          </h2>
+
+          <p className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed">
+            Your body goes through 3 distinct healing phases over 30 days. 
+            Each phase needs different care. We explain the science behind what's 
+            happening to your skin—so you know exactly what to do, and why.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={() => navigate('/login')}
+              className="flex items-center justify-center gap-2 px-8 py-4 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition text-lg"
+            >
+              Start Free
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => navigate('/login')}
+              className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:border-gray-400 transition text-lg"
+            >
+              I'm a Client
+            </button>
+          </div>
+
+          <p className="text-sm text-gray-500 mt-4">
+            For tattoo artists. Free for your first 10 clients.
+          </p>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="bg-gray-50 py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-black mb-4">
+              Science-backed aftercare, automated
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Your clients get educational emails at the exact moments that matter most—
+              based on the actual biology of wound healing.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            
+            {/* Step 1 */}
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-6">
+                <span className="text-white text-xl font-bold">1</span>
+              </div>
+              <h3 className="text-xl font-bold text-black mb-3">
+                Add Your Client
+              </h3>
+              <p className="text-gray-600 leading-relaxed">
+                Upload their fresh tattoo photo. We automatically start them at Day 0 
+                and create their healing timeline.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-6">
+                <span className="text-white text-xl font-bold">2</span>
+              </div>
+              <h3 className="text-xl font-bold text-black mb-3">
+                They Get Educated
+              </h3>
+              <p className="text-gray-600 leading-relaxed">
+                10 emails over 30 days. Each one explains what's happening in their skin 
+                that day—and what to do about it.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-6">
+                <span className="text-white text-xl font-bold">3</span>
+              </div>
+              <h3 className="text-xl font-bold text-black mb-3">
+                Better Outcomes
+              </h3>
+              <p className="text-gray-600 leading-relaxed">
+                Proper care = better color retention. Better healing = happier clients. 
+                Happier clients = better reviews.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Why It Matters (Science Section) */}
+      <section className="py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-black mb-6">
+                Why most tattoos don't heal perfectly
+              </h2>
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mt-1">
+                    <span className="text-red-600 text-lg">✕</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-black mb-1">Days 0-3: Thick scabs form</h4>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      When plasma dries on your skin, it creates thick scabs. These pull out 
+                      ink when they fall off—causing patchy color.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mt-1">
+                    <span className="text-red-600 text-lg">✕</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-black mb-1">Days 10-14: Picking happens</h4>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      Peak itching phase. Most people scratch or pick without realizing—
+                      damaging the fresh skin layer underneath.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mt-1">
+                    <span className="text-red-600 text-lg">✕</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-black mb-1">Days 21-30: Premature sun exposure</h4>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      Surface looks healed, but deep tissue is still rebuilding. UV damage now 
+                      causes permanent fading.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-8">
+              <h3 className="text-2xl font-bold text-black mb-6">
+                We solve this with timing
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-gray-700">
+                    <strong>Day 1:</strong> First wash technique to prevent thick scabs
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-gray-700">
+                    <strong>Day 10:</strong> Itching management strategies (right when it peaks)
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-gray-700">
+                    <strong>Day 21:</strong> Sun protection reminder (before they think it's healed)
+                  </p>
+                </div>
+              </div>
+              <div className="mt-8 pt-6 border-t border-gray-300">
+                <p className="text-sm text-gray-600">
+                  Every email is timed to the actual biology of skin regeneration—
+                  not random days on a calendar.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* For Artists Section */}
+      <section className="bg-black text-white py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+            Built for tattoo artists who care
+          </h2>
+          <p className="text-lg text-gray-300 mb-12 leading-relaxed">
+            You put hours into each piece. Don't let poor aftercare ruin your work. 
+            Give your clients the knowledge they need—automatically.
+          </p>
+          
+          <div className="grid sm:grid-cols-3 gap-8 mb-12">
+            <div>
+              <Clock className="w-8 h-8 mx-auto mb-3 text-gray-400" />
+              <h4 className="font-semibold mb-2">Save Time</h4>
+              <p className="text-sm text-gray-400">
+                Stop answering the same aftercare questions over DM
+              </p>
+            </div>
+            <div>
+              <Shield className="w-8 h-8 mx-auto mb-3 text-gray-400" />
+              <h4 className="font-semibold mb-2">Protect Your Work</h4>
+              <p className="text-sm text-gray-400">
+                Better healing = your art looks better long-term
+              </p>
+            </div>
+            <div>
+              <CheckCircle2 className="w-8 h-8 mx-auto mb-3 text-gray-400" />
+              <h4 className="font-semibold mb-2">Better Reviews</h4>
+              <p className="text-sm text-gray-400">
+                Happy, educated clients leave 5-star reviews
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigate('/login')}
+            className="px-8 py-4 bg-white text-black rounded-lg font-semibold hover:bg-gray-100 transition text-lg inline-flex items-center gap-2"
+          >
+            Start Free Trial
+            <ArrowRight className="w-5 h-5" />
+          </button>
+          <p className="text-sm text-gray-400 mt-4">
+            No credit card required. First 10 clients free.
+          </p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200 py-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+          <p className="text-sm text-gray-500">
+            © 2026 Healink. Science-backed tattoo aftercare.
+          </p>
         </div>
       </footer>
     </div>
   );
 }
-
-export default Home;

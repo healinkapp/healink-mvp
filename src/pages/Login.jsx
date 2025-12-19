@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
+import { getUserRole } from '../utils/getUserRole';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -18,13 +20,49 @@ function Login() {
 
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        // Create Firebase Auth account
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+        // Create Firestore document for artist
+        const userData = {
+          role: 'artist',
+          email: email,
+          createdAt: serverTimestamp()
+        };
+
+        await addDoc(collection(db, 'users'), userData);
+        console.log('✅ Artist account created:', userData);
+
+        // Redirect to dashboard
+        navigate('/dashboard');
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        // Login - Check role and redirect accordingly
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+        // Get user role from Firestore
+        const role = await getUserRole(userCredential.user.email);
+
+        if (!role) {
+          await signOut(auth);
+          setError('Account not found. Please contact support.');
+          setLoading(false);
+          return;
+        }
+
+        // Redirect based on role
+        if (role === 'artist') {
+          navigate('/dashboard');
+        } else if (role === 'client') {
+          navigate('/client/dashboard');
+        } else {
+          await signOut(auth);
+          setError('Invalid account type');
+          setLoading(false);
+        }
       }
-      navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      console.error('Login error:', err);
+      setError('Invalid email or password');
     } finally {
       setLoading(false);
     }

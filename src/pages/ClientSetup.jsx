@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { db, auth } from '../config/firebase';
+import { Palette } from 'lucide-react';
 
 export default function ClientSetup() {
   const { token } = useParams();
@@ -140,9 +141,12 @@ export default function ClientSetup() {
         
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-black mb-2">
-            Welcome to Healink! 🎨
-          </h1>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h1 className="text-3xl font-bold text-black">
+              Welcome to Healink!
+            </h1>
+            <Palette className="w-8 h-8 text-black" />
+          </div>
           <p className="text-gray-600">
             Hi {clientData?.name}! Let's complete your account setup.
           </p>
