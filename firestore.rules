@@ -1,0 +1,92 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isArtist() {
+      return isAuthenticated() && getUserData().role == 'artist';
+    }
+    
+    // Prevent role changes
+    function roleNotChanged() {
+      return !('role' in request.resource.data) || 
+             request.resource.data.role == resource.data.role;
+    }
+    
+    // Prevent artistId changes
+    function artistIdNotChanged() {
+      return !('artistId' in request.resource.data) || 
+             request.resource.data.artistId == resource.data.artistId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      
+      // READ ACCESS
+      allow read: if isAuthenticated() && (
+        // Users can read their own document
+        isOwner(userId) ||
+        // Artists can read their clients
+        (isArtist() && resource.data.artistId == request.auth.uid)
+      );
+      
+      // CREATE ACCESS
+      allow create: if isAuthenticated() && (
+        // Artists can create their own account
+        (request.resource.data.role == 'artist' && 
+         isOwner(userId)) ||
+        // Artists can create clients with their artistId
+        (request.resource.data.role == 'client' && 
+         request.resource.data.artistId == request.auth.uid &&
+         isArtist())
+      );
+      
+      // UPDATE ACCESS
+      allow update: if isAuthenticated() && (
+        // Artists can update their own data
+        (isOwner(userId) && 
+         resource.data.role == 'artist' &&
+         roleNotChanged()) ||
+        // Artists can update their clients
+        (resource.data.role == 'client' && 
+         resource.data.artistId == request.auth.uid &&
+         isArtist() &&
+         artistIdNotChanged() &&
+         roleNotChanged()) ||
+        // Clients can update their own data (but not role or artistId)
+        (isOwner(userId) && 
+         resource.data.role == 'client' &&
+         roleNotChanged() &&
+         artistIdNotChanged())
+      );
+      
+      // DELETE ACCESS
+      allow delete: if isAuthenticated() && (
+        // Artists can delete their own account
+        (isOwner(userId) && resource.data.role == 'artist') ||
+        // Artists can delete their clients
+        (resource.data.role == 'client' && 
+         resource.data.artistId == request.auth.uid &&
+         isArtist())
+      );
+    }
+    
+    // Deny all other collections by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
