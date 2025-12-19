@@ -1,5 +1,5 @@
 rules_version = '2';
-
+// Last updated: 2025-12-19 04:48 UTC - Allow client setup UPDATE
 service cloud.firestore {
   match /databases/{database}/documents {
     
@@ -35,18 +35,16 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       
-      // READ ACCESS (authenticated users)
+      // CRITICAL: Allow unauthenticated read for client setup
+      allow read: if true;
+      
+      // READ ACCESS
       allow read: if isAuthenticated() && (
         // Users can read their own document
         isOwner(userId) ||
         // Artists can read their clients
         (isArtist() && resource.data.artistId == request.auth.uid)
       );
-      
-      // UNAUTHENTICATED ACCESS for client setup flow
-      // Allow reading documents for clients who haven't completed setup
-      // This is required for /setup/:token to work before authentication
-      allow read: if !isAuthenticated();
       
       // CREATE ACCESS
       allow create: if isAuthenticated() && (
@@ -56,10 +54,19 @@ service cloud.firestore {
         // Artists can create clients with their artistId
         (request.resource.data.role == 'client' && 
          request.resource.data.artistId == request.auth.uid &&
-         isArtist())
+         isArtist()) ||
+        // NEW: Clients can create their own account during setup
+        (request.resource.data.role == 'client' && 
+         isOwner(userId) &&
+         'artistId' in request.resource.data)  // Must have an artistId
       );
       
-      // UPDATE ACCESS
+      // UPDATE ACCESS  
+      // CRITICAL: Allow completing client setup (must be FIRST to catch early auth state)
+      allow update: if resource.data.role == 'client' &&
+                       resource.data.accountSetup == false &&
+                       request.resource.data.accountSetup == true;
+      
       allow update: if isAuthenticated() && (
         // Artists can update their own data
         (isOwner(userId) && 
