@@ -7,6 +7,11 @@ import { uploadToCloudinary } from '../services/cloudinary';
 import emailjs from '@emailjs/browser';
 import { Users, Clock, Flame, CheckCircle2, Plus, LogOut, LayoutDashboard, Mail, Settings, Camera } from 'lucide-react';
 import { getUserRole } from '../utils/getUserRole';
+import { useToast } from '../contexts/ToastContext';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ClientCardSkeleton from '../components/ClientCardSkeleton';
+import ConfirmDialog from '../components/ConfirmDialog';
+import Onboarding from '../components/Onboarding';
 
 /**
  * ICON REFERENCE (Lucide React)
@@ -28,10 +33,18 @@ function Dashboard() {
   const [checkingRole, setCheckingRole] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     photo: null
+  });
+  const [formErrors, setFormErrors] = useState({
+    name: '',
+    email: '',
+    photo: ''
   });
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loadingForm, setLoadingForm] = useState(false);
@@ -44,6 +57,7 @@ function Dashboard() {
     completed: 0
   });
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   // Check auth and role - Artists only
   useEffect(() => {
@@ -140,28 +154,110 @@ function Dashboard() {
         setLoadingClients(false);
       },
       (error) => {
-        console.error('❌ Firestore query error:', error);
+        console.error('Firestore query error:', error);
         console.error('Error code:', error.code);
         console.error('Error message:', error.message);
+        
+        // Show user-friendly error
+        showToast('Failed to load clients. Please refresh the page.', 'error');
         setLoadingClients(false);
       }
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [showToast]);
+
+  // Check if user needs onboarding
+  useEffect(() => {
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    if (!hasSeenOnboarding && !loadingClients) {
+      // Only show onboarding after clients have loaded
+      setShowOnboarding(true);
+    }
+  }, [loadingClients]);
+
+  const handleCompleteOnboarding = () => {
+    localStorage.setItem('hasSeenOnboarding', 'true');
+    setShowOnboarding(false);
+  };
+
+  const handleCloseOnboarding = () => {
+    localStorage.setItem('hasSeenOnboarding', 'true');
+    setShowOnboarding(false);
+  };
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      showToast('See you soon!', 'info');
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
+      showToast('Failed to logout', 'error');
     }
+  };
+
+  const handleCancelForm = () => {
+    // Check if form has data
+    const hasData = formData.name || formData.email || formData.photo;
+    
+    if (hasData) {
+      setShowCancelConfirm(true);
+    } else {
+      // No data, just close
+      setShowModal(false);
+    }
+  };
+
+  const confirmCancelForm = () => {
+    setShowModal(false);
+    setFormData({ name: '', email: '', photo: null });
+    setFormErrors({ name: '', email: '', photo: '' });
+    setPhotoPreview(null);
+  };
+
+  const validateForm = () => {
+    const errors = {
+      name: '',
+      email: '',
+      photo: ''
+    };
+    let isValid = true;
+
+    // Validate name
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+      isValid = false;
+    } else if (formData.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters';
+      isValid = false;
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      errors.email = 'Please enter a valid email';
+      isValid = false;
+    }
+
+    // Validate photo
+    if (!formData.photo) {
+      errors.photo = 'Photo is required';
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
   };
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Clear photo error when file is selected
+      setFormErrors(prev => ({ ...prev, photo: '' }));
       setFormData({...formData, photo: file});
       
       // Create preview
@@ -200,6 +296,13 @@ function Dashboard() {
 
   const handleAddClient = async (e) => {
     e.preventDefault();
+    
+    // Validate form before submitting
+    if (!validateForm()) {
+      showToast('Please fix the errors before submitting', 'error');
+      return;
+    }
+    
     setLoadingForm(true);
 
     try {
@@ -207,8 +310,15 @@ function Dashboard() {
 
       // Upload photo to Cloudinary
       if (formData.photo) {
-        photoURL = await uploadToCloudinary(formData.photo);
-        console.log('Photo uploaded to Cloudinary:', photoURL);
+        try {
+          photoURL = await uploadToCloudinary(formData.photo);
+          console.log('Photo uploaded to Cloudinary:', photoURL);
+        } catch (uploadError) {
+          console.error('Photo upload failed:', uploadError);
+          showToast('Failed to upload photo. Please try again.', 'error');
+          setLoadingForm(false);
+          return;
+        }
       }
 
       // Generate unique token for magic link
@@ -245,22 +355,20 @@ function Dashboard() {
 
       if (emailSent) {
         console.log('✅ Client added and email sent!');
+        showToast('Client added and welcome email sent!', 'success');
       } else {
         console.warn('⚠️ Client added but email failed');
+        showToast('Client added, but email delivery failed', 'warning');
       }
 
       // Reset form and close modal
       setFormData({ name: '', email: '', photo: null });
+      setFormErrors({ name: '', email: '', photo: '' });
       setPhotoPreview(null);
       setShowModal(false);
-      
-      alert(emailSent 
-        ? '✅ Client added and welcome email sent!' 
-        : '✅ Client added! (Email failed - check console)'
-      );
     } catch (error) {
       console.error('Error adding client:', error);
-      alert('❌ Error: ' + error.message);
+      showToast('Failed to add client: ' + error.message, 'error');
     } finally {
       setLoadingForm(false);
     }
@@ -269,10 +377,7 @@ function Dashboard() {
   if (checkingRole || !authReady) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
-        </div>
+        <LoadingSpinner size="lg" text="Loading dashboard..." />
       </div>
     );
   }
@@ -306,7 +411,10 @@ function Dashboard() {
               </button>
             </li>
             <li>
-              <button className="w-full flex items-center justify-center p-3.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all">
+              <button 
+                onClick={() => navigate('/settings')}
+                className="w-full flex items-center justify-center p-3.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all"
+              >
                 <Settings className="w-5 h-5" />
               </button>
             </li>
@@ -346,7 +454,7 @@ function Dashboard() {
                 <p className="text-xs text-gray-500 font-medium">Artist</p>
               </div>
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-all duration-200"
               >
                 <LogOut className="w-4 h-4" />
@@ -456,9 +564,10 @@ function Dashboard() {
               </div>
 
               {loadingClients ? (
-                <div className="text-center py-12 text-gray-500">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-black mx-auto mb-3"></div>
-                  Loading clients...
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                  <ClientCardSkeleton />
+                  <ClientCardSkeleton />
+                  <ClientCardSkeleton />
                 </div>
               ) : clients.length === 0 ? (
                 <div className="text-center py-16 px-4">
@@ -574,9 +683,19 @@ function Dashboard() {
             <button
               onClick={() => {
                 setShowSettingsMenu(false);
-                handleLogout();
+                navigate('/settings');
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="font-semibold">Settings</span>
+            </button>
+            <button
+              onClick={() => {
+                setShowSettingsMenu(false);
+                setShowLogoutConfirm(true);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
             >
               <LogOut className="w-5 h-5" />
               <span className="font-semibold">Logout</span>
@@ -651,7 +770,7 @@ function Dashboard() {
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-xl sm:text-2xl font-bold text-black">Add New Client</h3>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={handleCancelForm}
                 className="text-gray-400 hover:text-black text-3xl leading-none transition-colors"
               >
                 ×
@@ -670,11 +789,20 @@ function Dashboard() {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base font-medium transition-all"
+                  onChange={(e) => {
+                    setFormData({...formData, name: e.target.value});
+                    if (formErrors.name) setFormErrors({...formErrors, name: ''});
+                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-black outline-none text-base font-medium transition-all ${
+                    formErrors.name 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-gray-300 focus:border-transparent'
+                  }`}
                   placeholder="John Doe"
                 />
+                {formErrors.name && (
+                  <p className="text-xs text-red-600 mt-1.5 font-medium">{formErrors.name}</p>
+                )}
               </div>
 
               {/* Email */}
@@ -685,31 +813,48 @@ function Dashboard() {
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base font-medium transition-all"
+                  onChange={(e) => {
+                    setFormData({...formData, email: e.target.value});
+                    if (formErrors.email) setFormErrors({...formErrors, email: ''});
+                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-black outline-none text-base font-medium transition-all ${
+                    formErrors.email 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-gray-300 focus:border-transparent'
+                  }`}
                   placeholder="john@example.com"
                 />
-                <p className="text-xs text-gray-500 mt-2 font-medium">They'll receive automated aftercare emails</p>
+                {formErrors.email ? (
+                  <p className="text-xs text-red-600 mt-1.5 font-medium">{formErrors.email}</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-2 font-medium">They'll receive automated aftercare emails</p>
+                )}
               </div>
 
               {/* Tattoo Photo */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Fresh Tattoo Photo (Day 0) *
+                  Fresh Tattoo Photo (Day 0)
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   capture="environment"
                   onChange={handlePhotoChange}
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none text-base file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gradient-to-r file:from-black file:to-gray-800 file:text-white file:font-bold hover:file:from-gray-800 hover:file:to-gray-700 file:transition-all file:shadow-md"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-black outline-none text-base file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gradient-to-r file:from-black file:to-gray-800 file:text-white file:font-bold hover:file:from-gray-800 hover:file:to-gray-700 file:transition-all file:shadow-md ${
+                    formErrors.photo 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-gray-300 focus:border-transparent'
+                  }`}
                 />
-                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5 font-medium">
-                  <Camera className="w-4 h-4" />
-                  Take or upload a photo of the fresh tattoo
-                </p>
+                {formErrors.photo ? (
+                  <p className="text-xs text-red-600 mt-1.5 font-medium">{formErrors.photo}</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5 font-medium">
+                    <Camera className="w-4 h-4" />
+                    Take or upload a photo of the fresh tattoo
+                  </p>
+                )}
                 
                 {/* Photo Preview */}
                 {photoPreview && (
@@ -727,23 +872,60 @@ function Dashboard() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl font-bold hover:bg-gray-50 transition-all text-base"
+                  onClick={handleCancelForm}
+                  disabled={loadingForm}
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl font-bold hover:bg-gray-50 transition-all text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loadingForm}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-black to-gray-800 text-white rounded-xl font-bold hover:from-gray-800 hover:to-gray-700 disabled:from-gray-400 disabled:to-gray-400 transition-all text-base shadow-lg"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-black to-gray-800 text-white rounded-xl font-bold hover:from-gray-800 hover:to-gray-700 disabled:from-gray-400 disabled:to-gray-400 transition-all text-base shadow-lg flex items-center justify-center gap-2"
                 >
-                  {loadingForm ? 'Adding...' : 'Add Client'}
+                  {loadingForm ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    'Add Client'
+                  )}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Logout Confirmation */}
+      <ConfirmDialog 
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogout}
+        title="Logout?"
+        message="Are you sure you want to logout?"
+        confirmText="Logout"
+        variant="warning"
+      />
+
+      {/* Cancel Form Confirmation */}
+      <ConfirmDialog
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={confirmCancelForm}
+        title="Discard changes?"
+        message="You have unsaved changes. Are you sure you want to close?"
+        confirmText="Discard"
+        variant="danger"
+      />
+
+      {/* Onboarding Tutorial */}
+      <Onboarding
+        isOpen={showOnboarding}
+        onClose={handleCloseOnboarding}
+        onComplete={handleCompleteOnboarding}
+      />
     </div>
   );
 }

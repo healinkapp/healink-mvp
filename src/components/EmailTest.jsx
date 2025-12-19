@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import emailjs from '@emailjs/browser';
+import { Send, CheckCircle, XCircle } from 'lucide-react';
 
 function EmailTest() {
   const [email, setEmail] = useState('');
@@ -10,7 +11,7 @@ function EmailTest() {
     e.preventDefault();
     
     if (!email) {
-      setStatus('❌ Please enter an email');
+      setStatus('Please enter an email');
       return;
     }
 
@@ -25,16 +26,16 @@ function EmailTest() {
           to_email: email,
           to_name: 'Client',
           subject: 'Welcome to Healink - Day 0',
-          message: 'Your tattoo healing journey starts now! 🎨'
+          message: 'Your tattoo healing journey starts now!'
         },
         'uH10FXkw8yv434h5P'
       );
 
-      setStatus('✅ Email sent successfully!');
+      setStatus('success');
       setEmail('');
     } catch (error) {
       console.error('Error:', error);
-      setStatus(`❌ Error: ${error.text || 'Failed to send'}`);
+      setStatus(`error: ${error.text || 'Failed to send'}`);
     } finally {
       setLoading(false);
     }
@@ -60,17 +61,28 @@ function EmailTest() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white py-3 rounded font-semibold hover:bg-gray-800 disabled:bg-gray-400"
+            className="w-full bg-black text-white py-3 rounded font-semibold hover:bg-gray-800 disabled:bg-gray-400 flex items-center justify-center gap-2"
           >
+            <Send className="w-4 h-4" />
             {loading ? 'Sending...' : 'Send Test Email'}
           </button>
         </form>
         
-        {status && (
-          <div className={`mt-4 p-4 rounded ${
-            status.includes('✅') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        {status && status !== 'Sending...' && (
+          <div className={`mt-4 p-4 rounded flex items-center gap-3 ${
+            status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
           }`}>
-            {status}
+            {status === 'success' ? (
+              <>
+                <CheckCircle className="w-5 h-5" />
+                <span>Email sent successfully!</span>
+              </>
+            ) : (
+              <>
+                <XCircle className="w-5 h-5" />
+                <span>{status}</span>
+              </>
+            )}
           </div>
         )}
       </div>

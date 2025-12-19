@@ -4,6 +4,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { getUserRole } from '../utils/getUserRole';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -62,7 +63,29 @@ function Login() {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Invalid email or password');
+      
+      // Translate Firebase error codes to user-friendly messages
+      let errorMessage = 'Invalid email or password';
+      
+      if (err.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email';
+      } else if (err.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address';
+      } else if (err.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled';
+      } else if (err.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many attempts. Please try again later';
+      } else if (err.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Check your connection';
+      } else if (err.code === 'auth/email-already-in-use') {
+        errorMessage = 'Email already in use. Try logging in instead';
+      } else if (err.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Use at least 6 characters';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -128,9 +151,16 @@ function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-4 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400 transition-all"
+            className="w-full px-4 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400 transition-all flex items-center justify-center gap-2"
           >
-            {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Login')}
+            {loading ? (
+              <>
+                <LoadingSpinner size="sm" />
+                <span>Loading...</span>
+              </>
+            ) : (
+              isSignUp ? 'Sign Up' : 'Login'
+            )}
           </button>
         </form>
 

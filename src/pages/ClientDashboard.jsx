@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../config/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { LogOut, Calendar, Flame, CheckCircle2, Clock, Sparkles, AlertCircle, Camera } from 'lucide-react';
+import { LogOut, Calendar, Flame, CheckCircle2, Clock, Sparkles, AlertCircle, Camera, Settings } from 'lucide-react';
 import { getUserRole } from '../utils/getUserRole';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { useToast } from '../contexts/ToastContext';
 
 export default function ClientDashboard() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [checkingRole, setCheckingRole] = useState(true);
   const [clientData, setClientData] = useState(null);
@@ -48,6 +51,7 @@ export default function ClientDashboard() {
         
         if (snapshot.empty) {
           console.error('No client data found');
+          showToast('No account found. Please contact your artist.', 'error');
           setLoading(false);
           return;
         }
@@ -57,12 +61,13 @@ export default function ClientDashboard() {
         setLoading(false);
       } catch (error) {
         console.error('Error fetching client data:', error);
+        showToast('Failed to load your data. Please try again.', 'error');
         setLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [navigate]);
+  }, [navigate, showToast]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -72,10 +77,7 @@ export default function ClientDashboard() {
   if (checkingRole || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your healing journey...</p>
-        </div>
+        <LoadingSpinner size="lg" text="Loading your healing journey..." />
       </div>
     );
   }
@@ -180,13 +182,22 @@ export default function ClientDashboard() {
             <h1 className="text-xl sm:text-2xl font-bold text-black tracking-tight">Your Healing Journey</h1>
             <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Hi, {clientData.name}!</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 rounded-xl transition-all duration-200"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Logout</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/settings')}
+              className="flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 rounded-xl transition-all duration-200"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 rounded-xl transition-all duration-200"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+          </div>
         </div>
       </header>
 

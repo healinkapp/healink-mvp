@@ -3,11 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { db, auth } from '../config/firebase';
-import { Palette } from 'lucide-react';
+import { Palette, XCircle } from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function ClientSetup() {
   const { token } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   
   const [loading, setLoading] = useState(true);
   const [clientData, setClientData] = useState(null);
@@ -81,8 +84,8 @@ export default function ClientSetup() {
         accountSetup: true
       });
 
-      // Redirect to client dashboard (placeholder for now)
-      alert('✅ Account created! Welcome to Healink!');
+      // Redirect to client dashboard
+      showToast('Account created successfully!', 'success');
       navigate('/client/dashboard');
     } catch (err) {
       console.error('Setup error:', err);
@@ -109,10 +112,7 @@ export default function ClientSetup() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
+        <LoadingSpinner size="lg" text="Loading..." />
       </div>
     );
   }
@@ -121,7 +121,11 @@ export default function ClientSetup() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="text-red-500 text-5xl mb-4">❌</div>
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+              <XCircle className="w-10 h-10 text-red-500" />
+            </div>
+          </div>
           <h2 className="text-2xl font-bold text-black mb-2">Oops!</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <a 
@@ -231,9 +235,16 @@ export default function ClientSetup() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full px-6 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400 transition"
+            className="w-full px-6 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400 transition flex items-center justify-center gap-2"
           >
-            {submitting ? 'Setting up...' : 'Complete Setup →'}
+            {submitting ? (
+              <>
+                <LoadingSpinner size="sm" />
+                <span>Setting up...</span>
+              </>
+            ) : (
+              'Complete Setup →'
+            )}
           </button>
         </form>
 
