@@ -4,7 +4,7 @@ import { auth, db } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy, doc, getDoc } from 'firebase/firestore';
 import { uploadToCloudinary } from '../services/cloudinary';
-import emailjs from '@emailjs/browser';
+import { sendDay0Email } from '../services/emailService';
 import { Users, Clock, Flame, CheckCircle2, Plus, LogOut, LayoutDashboard, Bell, Settings, Camera } from 'lucide-react';
 import { getUserRole } from '../utils/getUserRole';
 import { useToast } from '../contexts/ToastContext';
@@ -25,9 +25,6 @@ import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
  * Sizes: w-4 h-4 (small), w-5 h-5 (normal), w-6 h-6 (large)
  * Colors: text-gray-600 (default), text-orange-600 (warning), text-green-600 (success), text-black
  */
-
-// Initialize EmailJS with public key from environment
-emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
 
 function Dashboard() {
   const [authReady, setAuthReady] = useState(false);
@@ -290,35 +287,6 @@ function Dashboard() {
     }
   };
 
-  const sendDay0Email = async (clientData, photoURL, uniqueToken) => {
-    const setupLink = `${window.location.origin}/setup/${uniqueToken}`;
-    
-    // Get studio name with fallback
-    const studioName = artistData.studioName || artistData.name || 'Your Tattoo Studio';
-    
-    const templateParams = {
-      client_name: clientData.name,
-      studio_name: studioName,
-      tattoo_photo: photoURL,
-      setup_link: setupLink,
-      to_email: clientData.email
-    };
-
-    try {
-      await emailjs.send(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_EMAILJS_TEMPLATE_DAY0,
-        templateParams
-      );
-      console.log('Day 0 email sent successfully to:', clientData.email);
-      console.log('Studio name used:', studioName);
-      return true;
-    } catch (error) {
-      console.error('Error sending email:', error);
-      return false;
-    }
-  };
-
   const handleAddClient = async (e) => {
     e.preventDefault();
     
@@ -371,18 +339,22 @@ function Dashboard() {
 
       console.log('Client added successfully:', clientData);
 
-      // Send Day 0 email
-      const emailSent = await sendDay0Email(
-        { name: formData.name, email: formData.email },
-        photoURL,
-        uniqueToken
-      );
-
-      if (emailSent) {
-        console.log('✅ Client added and email sent!');
+      // Send Day 0 email using new email service
+      try {
+        const studioName = artistData.studioName || artistData.name || 'Your Tattoo Studio';
+        
+        await sendDay0Email({
+          clientEmail: formData.email,
+          clientName: formData.name,
+          studioName: studioName,
+          setupLink: `${window.location.origin}/setup/${uniqueToken}`,
+          tattooPhoto: photoURL
+        });
+        
+        console.log('✅ Client added and Day 0 email sent!');
         showToast('Client added and welcome email sent!', 'success');
-      } else {
-        console.warn('⚠️ Client added but email failed');
+      } catch (emailError) {
+        console.warn('⚠️ Client added but email failed:', emailError);
         showToast('Client added, but email delivery failed', 'warning');
       }
 
