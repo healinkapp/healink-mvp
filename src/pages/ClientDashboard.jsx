@@ -22,8 +22,8 @@ export default function ClientDashboard() {
         return;
       }
 
-      // Verify user is a client
-      const role = await getUserRole(user.email);
+      // Verify user is a client (pass both userId and email)
+      const role = await getUserRole(user.uid, user.email);
       
       if (role !== 'client') {
         console.log('❌ Not a client, redirecting...');

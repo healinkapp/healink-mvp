@@ -40,8 +40,8 @@ function Login() {
         // Login - Check role and redirect accordingly
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-        // Get user role from Firestore
-        const role = await getUserRole(userCredential.user.email);
+        // Get user role from Firestore (pass both userId and email)
+        const role = await getUserRole(userCredential.user.uid, userCredential.user.email);
 
         if (!role) {
           await signOut(auth);

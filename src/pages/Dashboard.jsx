@@ -67,8 +67,8 @@ function Dashboard() {
         return;
       }
 
-      // Verify user is an artist
-      const role = await getUserRole(user.email);
+      // Verify user is an artist (pass both userId and email)
+      const role = await getUserRole(user.uid, user.email);
       
       if (role !== 'artist') {
         console.log('❌ Not an artist, redirecting...');

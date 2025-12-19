@@ -144,16 +144,6 @@ function ForgotPassword() {
             </div>
           </>
         )}
-
-        {/* Back to Home */}
-        <div className="mt-8 text-center">
-          <a 
-            href="/" 
-            className="text-sm text-gray-500 hover:text-black transition"
-          >
-            ← Back to home
-          </a>
-        </div>
       </div>
     </div>
   );
