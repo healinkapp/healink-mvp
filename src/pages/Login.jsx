@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getUserRole } from '../utils/getUserRole';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -137,6 +137,16 @@ function Login() {
               <p className="text-xs text-gray-500 mt-1">
                 Minimum 6 characters
               </p>
+            )}
+            {!isSignUp && (
+              <div className="text-right mt-2">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-gray-600 hover:text-black transition"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             )}
           </div>
 

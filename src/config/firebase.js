@@ -6,12 +6,12 @@ import { getFunctions } from 'firebase/functions';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDjGQtqvpIAHz7XoZ_F0SWyzG-QLCGsSgU",
-  authDomain: "healink-mvp-27eff.firebaseapp.com",
-  projectId: "healink-mvp-27eff",
-  storageBucket: "healink-mvp-27eff.firebasestorage.app",
-  messagingSenderId: "23117856274",
-  appId: "1:23117856274:web:37ba414e208d663d0062cb"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Initialize Firebase

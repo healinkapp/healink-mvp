@@ -25,8 +25,8 @@ import Onboarding from '../components/Onboarding';
  * Colors: text-gray-600 (default), text-orange-600 (warning), text-green-600 (success), text-black
  */
 
-// Initialize EmailJS
-emailjs.init('uH10FXkw8yv434h5P');
+// Initialize EmailJS with public key from environment
+emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
 
 function Dashboard() {
   const [authReady, setAuthReady] = useState(false);
@@ -282,8 +282,8 @@ function Dashboard() {
 
     try {
       await emailjs.send(
-        'service_13h3kki',
-        'template_1tcang2',
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_DAY0,
         templateParams
       );
       console.log('Day 0 email sent successfully to:', clientData.email);

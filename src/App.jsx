@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './config/firebase';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import ClientSetup from './pages/ClientSetup';
@@ -43,6 +44,9 @@ function App() {
           
           {/* Login Page */}
           <Route path="/login" element={<Login />} />
+          
+          {/* Forgot Password Page */}
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           
           {/* Dashboard Page */}
           <Route path="/dashboard" element={<Dashboard />} />

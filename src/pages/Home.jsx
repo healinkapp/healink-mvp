@@ -1,30 +1,65 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Clock, Shield, Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import * as React from 'react';
 
 export default function Home() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Smooth scroll setup
+  React.useEffect(() => {
+    document.documentElement.style.scrollBehavior = 'smooth';
+    return () => {
+      document.documentElement.style.scrollBehavior = 'auto';
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       
+      {/* Skip to content - Accessibility */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-black focus:text-white focus:rounded-lg"
+      >
+        Skip to content
+      </a>
+
       {/* Header */}
       <header className="border-b border-gray-200 sticky top-0 bg-white z-40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-black">Healink</h1>
           
           {/* Desktop Menu */}
-          <div className="hidden sm:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-8">
+            <a
+              href="#how-it-works"
+              className="text-sm text-gray-700 hover:text-black transition font-medium"
+            >
+              How It Works
+            </a>
+            <a
+              href="#science"
+              className="text-sm text-gray-700 hover:text-black transition font-medium"
+            >
+              Science
+            </a>
+            <a
+              href="#pricing"
+              className="text-sm text-gray-700 hover:text-black transition font-medium"
+            >
+              Pricing
+            </a>
             <button
               onClick={() => navigate('/login')}
-              className="text-sm text-gray-700 hover:text-black transition"
+              className="text-sm text-gray-700 hover:text-black transition font-medium"
             >
               Login
             </button>
             <button
               onClick={() => navigate('/login')}
-              className="px-4 py-2 bg-black text-white text-sm rounded-lg font-semibold hover:bg-gray-800 transition"
+              className="px-4 py-2 bg-black text-white text-sm rounded-lg font-semibold hover:bg-gray-800 active:scale-95 active:opacity-80 transition"
             >
               Get Started
             </button>
@@ -33,7 +68,7 @@ export default function Home() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden p-2 text-gray-700 hover:text-black transition"
+            className="md:hidden p-2 text-gray-700 hover:text-black transition"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -42,7 +77,7 @@ export default function Home() {
 
         {/* Mobile Menu Fullscreen */}
         <div
-          className={`fixed inset-0 bg-white z-50 transform transition-transform duration-300 ease-in-out sm:hidden ${
+          className={`fixed inset-0 backdrop-blur-sm bg-white/95 z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
             mobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
           }`}
         >
@@ -60,13 +95,37 @@ export default function Home() {
             </div>
 
             {/* Menu Items - Centralized and Large */}
-            <nav className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
+            <nav className="flex-1 flex flex-col items-center justify-center gap-4 px-8">
+              <a
+                href="#how-it-works"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full max-w-sm text-center px-6 py-3 text-lg text-gray-700 hover:bg-gray-50 active:scale-95 active:opacity-80 rounded-xl transition font-medium"
+              >
+                How It Works
+              </a>
+              <a
+                href="#science"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full max-w-sm text-center px-6 py-3 text-lg text-gray-700 hover:bg-gray-50 active:scale-95 active:opacity-80 rounded-xl transition font-medium"
+              >
+                Science
+              </a>
+              <a
+                href="#pricing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full max-w-sm text-center px-6 py-3 text-lg text-gray-700 hover:bg-gray-50 active:scale-95 active:opacity-80 rounded-xl transition font-medium"
+              >
+                Pricing
+              </a>
+              
+              <div className="w-full max-w-sm border-t border-gray-200 my-4"></div>
+              
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   navigate('/login');
                 }}
-                className="w-full max-w-sm text-center px-6 py-4 text-lg text-gray-700 hover:bg-gray-50 rounded-xl transition font-medium border-2 border-gray-200"
+                className="w-full max-w-sm text-center px-6 py-4 text-lg text-gray-700 hover:bg-gray-50 active:scale-95 active:opacity-80 rounded-xl transition font-medium border-2 border-gray-200"
               >
                 Login
               </button>
@@ -75,7 +134,7 @@ export default function Home() {
                   setMobileMenuOpen(false);
                   navigate('/login');
                 }}
-                className="w-full max-w-sm text-center px-6 py-4 text-lg bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition"
+                className="w-full max-w-sm text-center px-6 py-4 text-lg bg-black text-white rounded-xl font-semibold hover:bg-gray-800 active:scale-95 active:opacity-80 transition"
               >
                 Get Started
               </button>
@@ -85,7 +144,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-32">
+      <section id="main-content" className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-32">
         <div className="max-w-3xl">
           
           {/* Problem Statement (Scientific Hook) */}
@@ -109,14 +168,14 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={() => navigate('/login')}
-              className="flex items-center justify-center gap-2 px-8 py-4 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition text-lg"
+              className="flex items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-4 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 active:scale-95 active:opacity-80 transition text-base sm:text-lg"
             >
               Start Free
               <ArrowRight className="w-5 h-5" />
             </button>
             <button
               onClick={() => navigate('/login')}
-              className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:border-gray-400 transition text-lg"
+              className="px-6 py-3 sm:px-8 sm:py-4 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:border-gray-400 active:scale-95 active:opacity-80 transition text-base sm:text-lg"
             >
               I'm a Client
             </button>
@@ -129,7 +188,7 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="bg-gray-50 py-20">
+      <section id="how-it-works" className="bg-gray-50 py-20 scroll-mt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-black mb-4">
@@ -144,7 +203,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8">
             
             {/* Step 1 */}
-            <div className="bg-white rounded-xl p-8 shadow-sm">
+            <div className="bg-white rounded-xl p-8 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all">
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-6">
                 <span className="text-white text-xl font-bold">1</span>
               </div>
@@ -158,7 +217,7 @@ export default function Home() {
             </div>
 
             {/* Step 2 */}
-            <div className="bg-white rounded-xl p-8 shadow-sm">
+            <div className="bg-white rounded-xl p-8 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all">
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-6">
                 <span className="text-white text-xl font-bold">2</span>
               </div>
@@ -172,7 +231,7 @@ export default function Home() {
             </div>
 
             {/* Step 3 */}
-            <div className="bg-white rounded-xl p-8 shadow-sm">
+            <div className="bg-white rounded-xl p-8 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all">
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-6">
                 <span className="text-white text-xl font-bold">3</span>
               </div>
@@ -190,7 +249,7 @@ export default function Home() {
       </section>
 
       {/* Why It Matters (Science Section) */}
-      <section className="py-20">
+      <section id="science" className="py-20 scroll-mt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             
@@ -277,7 +336,7 @@ export default function Home() {
       </section>
 
       {/* For Artists Section */}
-      <section className="bg-black text-white py-20">
+      <section id="pricing" className="bg-black text-white py-20 scroll-mt-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-6">
             Built for tattoo artists who care
@@ -313,7 +372,7 @@ export default function Home() {
 
           <button
             onClick={() => navigate('/login')}
-            className="px-8 py-4 bg-white text-black rounded-lg font-semibold hover:bg-gray-100 transition text-lg inline-flex items-center gap-2"
+            className="px-6 py-3 sm:px-8 sm:py-4 bg-white text-black rounded-lg font-semibold hover:bg-gray-100 active:scale-95 active:opacity-80 transition text-base sm:text-lg inline-flex items-center gap-2"
           >
             Start Free Trial
             <ArrowRight className="w-5 h-5" />
