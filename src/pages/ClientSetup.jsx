@@ -6,6 +6,7 @@ import { db, auth } from '../config/firebase';
 import { Palette, XCircle } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { getOptimizedImageUrl, getResponsiveSrcSet, DEFAULT_SIZES } from '../utils/imageOptimization';
 
 export default function ClientSetup() {
   const { token } = useParams();
@@ -164,7 +165,10 @@ export default function ClientSetup() {
               Your fresh tattoo:
             </p>
             <img 
-              src={clientData.tattooPhoto}
+              src={getOptimizedImageUrl(clientData.tattooPhoto, 800)}
+              srcSet={getResponsiveSrcSet(clientData.tattooPhoto)}
+              sizes="(max-width: 640px) 400px, 800px"
+              loading="eager"
               alt="Your tattoo"
               className="w-full h-48 object-cover rounded-lg shadow-md"
             />

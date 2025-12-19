@@ -7,6 +7,7 @@ import { LogOut, Calendar, Flame, CheckCircle2, Clock, Sparkles, AlertCircle, Ca
 import { getUserRole } from '../utils/getUserRole';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useToast } from '../contexts/ToastContext';
+import { getOptimizedImageUrl, getResponsiveSrcSet, DEFAULT_SIZES } from '../utils/imageOptimization';
 
 export default function ClientDashboard() {
   const navigate = useNavigate();
@@ -391,7 +392,10 @@ export default function ClientDashboard() {
           {clientData.tattooPhoto ? (
             <div className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-xl group">
               <img 
-                src={clientData.tattooPhoto}
+                src={getOptimizedImageUrl(clientData.tattooPhoto, 800)}
+                srcSet={getResponsiveSrcSet(clientData.tattooPhoto)}
+                sizes={DEFAULT_SIZES}
+                loading="eager"
                 alt="Your tattoo"
                 className="w-full h-56 sm:h-80 object-cover ring-1 ring-gray-200/50 transition-transform duration-300 group-hover:scale-105"
               />

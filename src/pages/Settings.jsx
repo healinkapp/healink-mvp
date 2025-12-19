@@ -53,17 +53,20 @@ function Settings() {
     name: '',
     email: '',
     photoURL: '',
+    studioName: '',
     createdAt: null
   });
 
   // Profile form
   const [profileForm, setProfileForm] = useState({
     name: '',
-    email: ''
+    email: '',
+    studioName: ''
   });
   const [profileErrors, setProfileErrors] = useState({
     name: '',
-    email: ''
+    email: '',
+    studioName: ''
   });
 
   // Password form
@@ -104,13 +107,15 @@ function Settings() {
             name: data.name || user.displayName || '',
             email: user.email || '',
             photoURL: data.photoURL || user.photoURL || '',
+            studioName: data.studioName || '',
             createdAt: data.createdAt
           };
           
           setUserData(userData);
           setProfileForm({
             name: userData.name,
-            email: userData.email
+            email: userData.email,
+            studioName: userData.studioName
           });
           setPhotoPreview(userData.photoURL);
         }
@@ -127,7 +132,7 @@ function Settings() {
 
   // Validate profile form
   const validateProfileForm = () => {
-    const errors = { name: '', email: '' };
+    const errors = { name: '', email: '', studioName: '' };
     let isValid = true;
 
     if (!profileForm.name.trim()) {
@@ -143,6 +148,12 @@ function Settings() {
       isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileForm.email)) {
       errors.email = 'Please enter a valid email';
+      isValid = false;
+    }
+
+    // Studio name is optional, but if provided, must be at least 2 characters
+    if (profileForm.studioName && profileForm.studioName.trim().length < 2) {
+      errors.studioName = 'Studio name must be at least 2 characters';
       isValid = false;
     }
 
@@ -212,14 +223,16 @@ function Settings() {
       // Update Firestore
       await updateDoc(doc(db, 'users', user.uid), {
         name: profileForm.name,
-        email: profileForm.email
+        email: profileForm.email,
+        studioName: profileForm.studioName || ''
       });
 
       // Update local state
       setUserData(prev => ({
         ...prev,
         name: profileForm.name,
-        email: profileForm.email
+        email: profileForm.email,
+        studioName: profileForm.studioName
       }));
 
       showToast('Profile updated successfully', 'success');
@@ -385,6 +398,7 @@ function Settings() {
                     <img 
                       src={photoPreview} 
                       alt="Profile" 
+                      loading="lazy"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -481,10 +495,38 @@ function Settings() {
                 )}
               </div>
 
+              {/* Studio Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Studio Name <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
+                <div className="relative">
+                  <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={profileForm.studioName}
+                    onChange={(e) => {
+                      setProfileForm(prev => ({ ...prev, studioName: e.target.value }));
+                      setProfileErrors(prev => ({ ...prev, studioName: '' }));
+                    }}
+                    placeholder="Your Tattoo Studio"
+                    className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:border-black transition-colors ${
+                      profileErrors.studioName ? 'border-red-500' : 'border-gray-200'
+                    }`}
+                  />
+                </div>
+                {profileErrors.studioName && (
+                  <p className="text-red-500 text-sm mt-1">{profileErrors.studioName}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1.5">
+                  This will appear in client emails
+                </p>
+              </div>
+
               {/* Save Button */}
               <button
                 onClick={handleUpdateProfile}
-                disabled={savingProfile || (profileForm.name === userData.name && profileForm.email === userData.email)}
+                disabled={savingProfile || (profileForm.name === userData.name && profileForm.email === userData.email && profileForm.studioName === userData.studioName)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {savingProfile ? (

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy, doc, getDoc } from 'firebase/firestore';
 import { uploadToCloudinary } from '../services/cloudinary';
 import emailjs from '@emailjs/browser';
 import { Users, Clock, Flame, CheckCircle2, Plus, LogOut, LayoutDashboard, Mail, Settings, Camera } from 'lucide-react';
@@ -12,6 +12,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ClientCardSkeleton from '../components/ClientCardSkeleton';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Onboarding from '../components/Onboarding';
+import { getOptimizedImageUrl, getResponsiveSrcSet, DEFAULT_SIZES } from '../utils/imageOptimization';
 
 /**
  * ICON REFERENCE (Lucide React)
@@ -36,6 +37,10 @@ function Dashboard() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [artistData, setArtistData] = useState({
+    name: '',
+    studioName: ''
+  });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -82,6 +87,21 @@ function Dashboard() {
       }
 
       console.log('✅ Dashboard: Artist authenticated:', user.email);
+      
+      // Load artist data from Firestore
+      try {
+        const artistDoc = await getDoc(doc(db, 'users', user.uid));
+        if (artistDoc.exists()) {
+          const data = artistDoc.data();
+          setArtistData({
+            name: data.name || user.displayName || '',
+            studioName: data.studioName || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error loading artist data:', error);
+      }
+      
       setAuthReady(true);
       setCheckingRole(false);
     });
@@ -272,9 +292,12 @@ function Dashboard() {
   const sendDay0Email = async (clientData, photoURL, uniqueToken) => {
     const setupLink = `${window.location.origin}/setup/${uniqueToken}`;
     
+    // Get studio name with fallback
+    const studioName = artistData.studioName || artistData.name || 'Your Tattoo Studio';
+    
     const templateParams = {
       client_name: clientData.name,
-      studio_name: 'Appreciart', // TODO: Get from artist profile later
+      studio_name: studioName,
       tattoo_photo: photoURL,
       setup_link: setupLink,
       to_email: clientData.email
@@ -287,6 +310,7 @@ function Dashboard() {
         templateParams
       );
       console.log('Day 0 email sent successfully to:', clientData.email);
+      console.log('Studio name used:', studioName);
       return true;
     } catch (error) {
       console.error('Error sending email:', error);
@@ -598,7 +622,10 @@ function Dashboard() {
                         {client.tattooPhoto && (
                           <div className="relative overflow-hidden">
                             <img 
-                              src={client.tattooPhoto}
+                              src={getOptimizedImageUrl(client.tattooPhoto, 800)}
+                              srcSet={getResponsiveSrcSet(client.tattooPhoto)}
+                              sizes="(max-width: 640px) 400px, (max-width: 1024px) 800px, 800px"
+                              loading="lazy"
                               alt={`${client.name}'s tattoo`}
                               className="w-full h-44 sm:h-52 object-cover transition-transform duration-300 group-hover:scale-105"
                             />
@@ -862,6 +889,7 @@ function Dashboard() {
                     <img
                       src={photoPreview}
                       alt="Tattoo preview"
+                      loading="eager"
                       className="w-full h-48 object-cover rounded-xl border-2 border-gray-200 shadow-md"
                     />
                   </div>
