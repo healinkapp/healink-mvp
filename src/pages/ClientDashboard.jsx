@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../config/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { LogOut, Calendar, Flame, CheckCircle2, Clock, Sparkles, AlertCircle, Camera, Settings, Bell, X } from 'lucide-react';
 import { getUserRole } from '../utils/getUserRole';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useToast } from '../contexts/ToastContext';
 import { getOptimizedImageUrl, getResponsiveSrcSet, DEFAULT_SIZES } from '../utils/imageOptimization';
 import { requestPushPermission, getPushPermissionStatus } from '../services/pushService';
+import { uploadToCloudinary } from '../services/cloudinary';
 
 export default function ClientDashboard() {
   const navigate = useNavigate();
@@ -18,6 +19,10 @@ export default function ClientDashboard() {
   const [clientData, setClientData] = useState(null);
   const [showPushBanner, setShowPushBanner] = useState(false);
   const [requestingPermission, setRequestingPermission] = useState(false);
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   // Check if we should show push permission banner
   useEffect(() => {
@@ -119,6 +124,81 @@ export default function ClientDashboard() {
   const handleLogout = async () => {
     await signOut(auth);
     navigate('/');
+  };
+
+  // Photo upload handlers
+  const handlePhotoFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setPhotoFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePhotoUpload = async () => {
+    if (!photoFile || !clientData?.id) return;
+
+    setUploadingPhoto(true);
+    try {
+      // Upload to Cloudinary
+      const url = await uploadToCloudinary(photoFile);
+
+      // Update Firestore - add to photos array
+      const userQuery = query(
+        collection(db, 'users'),
+        where('email', '==', auth.currentUser.email),
+        where('role', '==', 'client')
+      );
+      const snapshot = await getDocs(userQuery);
+      
+      if (!snapshot.empty) {
+        const userDocRef = doc(db, 'users', snapshot.docs[0].id);
+        await updateDoc(userDocRef, {
+          photos: arrayUnion({
+            url: url,
+            day: actualHealingDay,
+            uploadedAt: serverTimestamp()
+          })
+        });
+
+        showToast('Photo uploaded successfully!', 'success');
+        setShowPhotoUpload(false);
+        setPhotoFile(null);
+        setPhotoPreview(null);
+
+        // Reload data to show new photo
+        const updatedSnapshot = await getDocs(userQuery);
+        if (!updatedSnapshot.empty) {
+          setClientData(updatedSnapshot.docs[0].data());
+        }
+      }
+    } catch (error) {
+      console.error('[ClientDashboard] Photo upload failed:', error);
+      showToast('Upload failed. Please try again.', 'error');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleCancelUpload = () => {
+    setShowPhotoUpload(false);
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
+  const getDayLabel = (day) => {
+    if (day === 0) return 'Fresh tattoo';
+    if (day <= 7) return 'Critical healing phase';
+    if (day <= 14) return 'Active healing';
+    if (day <= 21) return 'Stabilizing';
+    if (day < 30) return 'Maintenance phase';
+    return 'Fully healed';
   };
 
   if (checkingRole || loading) {
@@ -491,6 +571,17 @@ export default function ClientDashboard() {
           <p className="text-[10px] sm:text-xs text-gray-500 text-center mt-3 sm:mt-4 font-semibold">
             Day 0 - Fresh ink (when plasma was still present)
           </p>
+          
+          {/* Upload Progress Photo Button */}
+          {!isHealed && (
+            <button
+              onClick={() => setShowPhotoUpload(true)}
+              className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-black to-gray-800 text-white rounded-xl font-bold hover:from-gray-800 hover:to-gray-700 transition-all shadow-lg flex items-center justify-center gap-2"
+            >
+              <Camera className="w-5 h-5" />
+              Upload Progress Photo (Day {actualHealingDay})
+            </button>
+          )}
         </div>
 
         {/* Next Check-in Card - ACCENT */}
@@ -561,13 +652,84 @@ export default function ClientDashboard() {
             <p className="text-xs sm:text-sm text-white font-bold uppercase tracking-wider">Coming Soon</p>
           </div>
           <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-            • Upload weekly progress photos<br/>
             • Daily symptom tracking (itching, redness)<br/>
-            • 30-day healing timeline with science explanations
+            • 30-day healing timeline with science explanations<br/>
+            • Photo comparison slider (before/after)
           </p>
         </div>
 
       </main>
+
+      {/* Photo Upload Modal */}
+      {showPhotoUpload && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Upload Progress Photo</h3>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Day {actualHealingDay} - {getDayLabel(actualHealingDay)}
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Take or upload a photo
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handlePhotoFileChange}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-black outline-none text-base file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gradient-to-r file:from-black file:to-gray-800 file:text-white file:font-bold hover:file:from-gray-800 hover:file:to-gray-700 file:transition-all file:shadow-md"
+              />
+            </div>
+
+            {/* Photo Preview */}
+            {photoPreview && (
+              <div className="mb-4">
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-xl border-2 border-gray-200 shadow-md"
+                />
+              </div>
+            )}
+
+            {uploadingPhoto && (
+              <div className="mb-4 flex items-center justify-center gap-2 text-gray-600">
+                <LoadingSpinner size="sm" />
+                <span className="text-sm font-medium">Uploading photo...</span>
+              </div>
+            )}
+            
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelUpload}
+                disabled={uploadingPhoto}
+                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl font-bold hover:bg-gray-50 transition-all text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePhotoUpload}
+                disabled={uploadingPhoto || !photoFile}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-black to-gray-800 text-white rounded-xl font-bold hover:from-gray-800 hover:to-gray-700 disabled:from-gray-400 disabled:to-gray-400 transition-all text-base shadow-lg flex items-center justify-center gap-2"
+              >
+                {uploadingPhoto ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-5 h-5" />
+                    <span>Upload</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
