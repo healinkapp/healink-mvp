@@ -11,6 +11,7 @@ import { getOptimizedImageUrl, getResponsiveSrcSet, DEFAULT_SIZES } from '../uti
 import { requestPushPermission, getPushPermissionStatus } from '../services/pushService';
 import { uploadToCloudinary } from '../services/cloudinary';
 import PhotoTimeline from '../components/PhotoTimeline';
+import BeforeAfter from '../components/BeforeAfter';
 
 export default function ClientDashboard() {
   const navigate = useNavigate();
@@ -604,6 +605,17 @@ export default function ClientDashboard() {
             </div>
           )}
         </div>
+
+        {/* Before/After Comparison - Show when healed and has Day 30 photo */}
+        {isHealed && clientData.tattooPhoto && clientData.photos && (() => {
+          const day30Photo = clientData.photos.find(p => p && p.day === 30);
+          return day30Photo ? (
+            <BeforeAfter 
+              beforePhoto={clientData.tattooPhoto}
+              afterPhoto={day30Photo.url}
+            />
+          ) : null;
+        })()}
 
         {/* Next Check-in Card - ACCENT */}
         {!isHealed && (
