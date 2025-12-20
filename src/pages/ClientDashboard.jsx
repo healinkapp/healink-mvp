@@ -10,6 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import { getOptimizedImageUrl, getResponsiveSrcSet, DEFAULT_SIZES } from '../utils/imageOptimization';
 import { requestPushPermission, getPushPermissionStatus } from '../services/pushService';
 import { uploadToCloudinary } from '../services/cloudinary';
+import PhotoTimeline from '../components/PhotoTimeline';
 
 export default function ClientDashboard() {
   const navigate = useNavigate();
@@ -108,7 +109,11 @@ export default function ClientDashboard() {
           return;
         }
 
-        const data = snapshot.docs[0].data();
+        const data = {
+          ...snapshot.docs[0].data(),
+          id: snapshot.docs[0].id,
+          photos: snapshot.docs[0].data().photos || []
+        };
         setClientData(data);
         setLoading(false);
       } catch (error) {
@@ -172,10 +177,15 @@ export default function ClientDashboard() {
         setPhotoFile(null);
         setPhotoPreview(null);
 
-        // Reload data to show new photo
+        // Reload data to show new photo in timeline
         const updatedSnapshot = await getDocs(userQuery);
         if (!updatedSnapshot.empty) {
-          setClientData(updatedSnapshot.docs[0].data());
+          const updatedData = {
+            ...updatedSnapshot.docs[0].data(),
+            id: updatedSnapshot.docs[0].id,
+            photos: updatedSnapshot.docs[0].data().photos || []
+          };
+          setClientData(updatedData);
         }
       }
     } catch (error) {
@@ -581,6 +591,17 @@ export default function ClientDashboard() {
               <Camera className="w-5 h-5" />
               Upload Progress Photo (Day {actualHealingDay})
             </button>
+          )}
+
+          {/* Photo Timeline */}
+          {clientData.photos && clientData.photos.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <PhotoTimeline 
+                photos={clientData.photos}
+                currentDay={actualHealingDay}
+                onUploadClick={() => setShowPhotoUpload(true)}
+              />
+            </div>
           )}
         </div>
 
