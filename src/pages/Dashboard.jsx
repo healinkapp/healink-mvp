@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy, doc, getDoc } from 'firebase/firestore';
 import { uploadToCloudinary } from '../services/cloudinary';
 import { sendDay0Email } from '../services/emailService';
-import { Users, Clock, Flame, CheckCircle2, Plus, LogOut, LayoutDashboard, Bell, Settings, Camera } from 'lucide-react';
+import { Users, Clock, Flame, CheckCircle2, Plus, LogOut, Camera } from 'lucide-react';
 import { getUserRole } from '../utils/getUserRole';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -13,13 +13,11 @@ import ClientCardSkeleton from '../components/ClientCardSkeleton';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Onboarding from '../components/Onboarding';
 import { getOptimizedImageUrl, getResponsiveSrcSet, DEFAULT_SIZES } from '../utils/imageOptimization';
-import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 
 /**
  * ICON REFERENCE (Lucide React)
  * 
  * Stats: Users, Clock, Flame, CheckCircle2
- * Navigation: LayoutDashboard, Bell, Settings
  * Actions: Plus, LogOut, Camera
  * 
  * Sizes: w-4 h-4 (small), w-5 h-5 (normal), w-6 h-6 (large)
@@ -30,7 +28,6 @@ function Dashboard() {
   const [authReady, setAuthReady] = useState(false);
   const [checkingRole, setCheckingRole] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -60,7 +57,6 @@ function Dashboard() {
   });
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const unreadCount = useUnreadNotifications();
 
   // Check auth and role - Artists only
   useEffect(() => {
@@ -356,67 +352,24 @@ function Dashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100">
-      
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:w-20 bg-gradient-to-b from-black via-gray-900 to-black text-white flex-col shadow-2xl border-r border-gray-800">
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-800">
-          <h1 className="font-bold text-2xl text-center text-white">H</h1>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4">
-          <ul className="space-y-3">
-            <li>
-              <button className="w-full flex items-center justify-center p-3.5 rounded-xl bg-gradient-to-br from-gray-800 to-gray-700 text-white transition-all hover:from-gray-700 hover:to-gray-600 shadow-lg">
-                <LayoutDashboard className="w-5 h-5" />
-              </button>
-            </li>
-            <li>
-              <button 
-                onClick={() => navigate('/notifications')}
-                className="w-full relative flex items-center justify-center p-3.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all"
-              >
-                <Bell className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-            </li>
-            <li>
-              <button 
-                onClick={() => navigate('/settings')}
-                className="w-full flex items-center justify-center p-3.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-            </li>
-          </ul>
-        </nav>
-      </aside>
-
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="w-full">
         {/* Header */}
         <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-4 md:px-8 py-4 md:py-5 shadow-sm">
           <div className="flex justify-between items-center gap-4">
-            {/* Title (removed hamburger menu) */}
+            {/* Title */}
             <div className="flex items-center gap-3">
-              {/* Avatar - Mobile */}
-              <div className="md:hidden w-10 h-10 rounded-full bg-gradient-to-br from-black to-gray-800 flex items-center justify-center text-white font-bold shadow-lg">
+              {/* Avatar */}
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-black to-gray-800 flex items-center justify-center text-white font-bold shadow-lg">
                 {auth.currentUser?.email?.charAt(0).toUpperCase() || 'A'}
               </div>
               <div>
                 <h2 className="text-xl md:text-2xl font-bold text-black tracking-tight">
-                  <span className="md:hidden">Hi, {auth.currentUser?.email?.split('@')[0]}</span>
-                  <span className="hidden md:inline">Dashboard</span>
+                  Dashboard
                 </h2>
                 <p className="text-xs md:text-sm text-gray-600 mt-0.5">
-                  <span className="md:hidden">Manage your clients</span>
-                  <span className="hidden md:inline">Manage your clients' healing journeys</span>
+                  Manage your clients' healing journeys
                 </p>
               </div>
             </div>
@@ -646,101 +599,6 @@ function Dashboard() {
           </div>
         </main>
       </div>
-
-      {/* Settings Menu Overlay - Mobile */}
-      {showSettingsMenu && (
-        <>
-          <div 
-            className="md:hidden fixed inset-0 bg-black/40 z-40"
-            onClick={() => setShowSettingsMenu(false)}
-          ></div>
-          <div className="md:hidden fixed bottom-20 right-4 bg-white rounded-2xl shadow-2xl z-50 border border-gray-200 overflow-hidden min-w-[200px]">
-            <div className="p-3 border-b border-gray-100">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Account</p>
-              <p className="text-sm font-bold text-black truncate mt-1">{auth.currentUser?.email}</p>
-            </div>
-            <button
-              onClick={() => {
-                setShowSettingsMenu(false);
-                navigate('/settings');
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Settings className="w-5 h-5" />
-              <span className="font-semibold">Settings</span>
-            </button>
-            <button
-              onClick={() => {
-                setShowSettingsMenu(false);
-                setShowLogoutConfirm(true);
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="font-semibold">Logout</span>
-            </button>
-          </div>
-        </>
-      )}
-
-      {/* Bottom Tab Bar - Mobile Only */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
-        <div className="flex items-center justify-around px-1 py-2 pb-safe">
-          
-          {/* Dashboard */}
-          <button className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-black to-gray-800 flex items-center justify-center shadow-md">
-              <LayoutDashboard className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-[9px] font-bold text-black mt-0.5">Dashboard</span>
-          </button>
-
-          {/* Add Client (Center - Larger) */}
-          <button 
-            onClick={() => setShowModal(true)}
-            className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1 -mt-3"
-          >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-xl border-3 border-white">
-              <Plus className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-[9px] font-bold text-blue-600 mt-0.5">Add</span>
-          </button>
-
-          {/* Notifications */}
-          <button 
-            onClick={() => navigate('/notifications')}
-            className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1 relative"
-          >
-            <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center relative">
-              <Bell className="w-5 h-5 text-gray-600" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </div>
-            <span className="text-[9px] font-semibold text-gray-500 mt-0.5">Alerts</span>
-          </button>
-
-          {/* Settings */}
-          <button 
-            onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-            className="flex flex-col items-center gap-0.5 px-2 py-2 flex-1"
-          >
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
-              showSettingsMenu ? 'bg-gray-900' : 'bg-gray-100'
-            }`}>
-              <Settings className={`w-5 h-5 transition-colors ${
-                showSettingsMenu ? 'text-white' : 'text-gray-600'
-              }`} />
-            </div>
-            <span className={`text-[9px] font-semibold mt-0.5 transition-colors ${
-              showSettingsMenu ? 'text-black' : 'text-gray-500'
-            }`}>Settings</span>
-          </button>
-
-        </div>
-      </nav>
 
       {/* Add Client Modal */}
       {showModal && (

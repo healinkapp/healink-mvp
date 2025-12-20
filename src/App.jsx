@@ -14,6 +14,7 @@ import FirebaseTest from './components/FirebaseTest';
 import EmailTest from './components/EmailTest';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/LoadingSpinner';
+import AppLayout from './layouts/AppLayout';
 
 function App() {
   const [authLoading, setAuthLoading] = useState(true);
@@ -51,20 +52,36 @@ function App() {
           {/* Forgot Password Page */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
           
-          {/* Dashboard Page */}
-          <Route path="/dashboard" element={<Dashboard />} />
+          {/* Artist Dashboard - With Layout */}
+          <Route path="/dashboard" element={
+            <AppLayout userRole="artist">
+              <Dashboard />
+            </AppLayout>
+          } />
           
-          {/* Notifications Page */}
-          <Route path="/notifications" element={<Notifications />} />
+          {/* Notifications Page - With Layout */}
+          <Route path="/notifications" element={
+            <AppLayout userRole="artist">
+              <Notifications />
+            </AppLayout>
+          } />
           
-          {/* Settings Page */}
-          <Route path="/settings" element={<Settings />} />
+          {/* Settings Page - With Layout */}
+          <Route path="/settings" element={
+            <AppLayout userRole="artist">
+              <Settings />
+            </AppLayout>
+          } />
           
-          {/* Client Setup Page */}
+          {/* Client Setup Page - No Layout */}
           <Route path="/setup/:token" element={<ClientSetup />} />
           
-          {/* Client Dashboard */}
-          <Route path="/client/dashboard" element={<ClientDashboard />} />
+          {/* Client Dashboard - With Layout */}
+          <Route path="/client/dashboard" element={
+            <AppLayout userRole="client">
+              <ClientDashboard />
+            </AppLayout>
+          } />
           
           {/* Test Pages - With Nav */}
           <Route path="/test" element={
