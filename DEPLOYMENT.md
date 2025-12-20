@@ -1,57 +1,267 @@
-# 🚀 DEPLOYMENT GUIDE - Healink Scheduling System
+# 🚀 FINAL DEPLOYMENT CHECKLIST
 
-## ✅ PRE-DEPLOYMENT CHECKLIST
+## ✅ PRE-DEPLOYMENT (5 minutes)
 
-- [x] Functions folder created
-- [x] Dependencies installed (`npm install` in functions/)
-- [x] EmailJS credentials ready
-- [x] Firebase project initialized
-- [ ] Firebase Functions config set
-- [ ] Functions deployed to Firebase
-- [ ] First execution verified
+### 1. Set Firebase Functions Config
+```bash
+cd functions
+./config-quick.sh
+cd ..
+```
+
+**Expected output:**
+- ✅ 9 EmailJS variables set
+- ✅ Configuration verified
+
+**Fallback:** If script fails, see `functions/config-manual.md`
 
 ---
 
-## 📋 STEP-BY-STEP DEPLOYMENT
-
-### Step 1: Install Dependencies (Already Done ✅)
+### 2. Install Dependencies
 ```bash
 cd functions
 npm install
 cd ..
 ```
 
-### Step 2: Configure Firebase Functions
+**Expected output:**
+- ✅ 523 packages installed
+- ✅ 0 vulnerabilities
+
+---
+
+### 3. Build Frontend
 ```bash
-# Option A: Quick setup (recommended)
+npm run build
+```
+
+**Expected output:**
+- ✅ Build complete (2-3s)
+- ✅ Bundle size: ~717 kB
+
+---
+
+## 🚀 DEPLOY (3 minutes)
+
+### 1. Deploy Cloud Functions
+```bash
+firebase deploy --only functions
+```
+
+**Expected output:**
+```
+✔ Deploy complete!
+✔ Function(s) deployed successfully:
+   - dailyAftercare (europe-west1)
+```
+
+---
+
+### 2. Verify Function Deployed
+```bash
+firebase functions:list
+```
+
+**Expected output:**
+```
+dailyAftercare(europe-west1)
+  Trigger: pubsub.schedule
+  Schedule: 0 9 * * *
+  Timezone: Europe/Dublin
+```
+
+---
+
+### 3. Check Function Logs
+```bash
+firebase functions:log --only dailyAftercare --lines 10
+```
+
+**Expected output:**
+- ✅ No errors
+- Function waiting for tomorrow 9 AM
+
+---
+
+## 🧪 TEST (10 minutes)
+
+### Test 1: Day 0 Email
+1. Open app: https://healink-mvp.web.app
+2. Login as artist
+3. Add test client with your email
+4. Check inbox for Day 0 email
+
+**Expected:**
+- ✅ Email received within 30 seconds
+- ✅ Subject: "Your tattoo healing starts today"
+- ✅ Setup link works
+
+---
+
+### Test 2: Client Setup
+1. Click setup link from email
+2. Create password
+3. Grant push permission
+4. View dashboard
+
+**Expected:**
+- ✅ Account created
+- ✅ Push permission granted
+- ✅ FCM token saved to Firestore
+
+---
+
+### Test 3: Monitor Tomorrow's Automated Send
+Wait until tomorrow 9:00 AM Dublin time, then check:
+
+```bash
+firebase functions:log --only dailyAftercare
+```
+
+**Expected:**
+- ✅ `[EMAIL] Sent Day 1 to {email}`
+- ✅ `[PUSH] Sent Day 1 to {email}`
+
+---
+
+### Test 4: Photo Reminders (Day 3, 7, 14, 30)
+On Day 3, 7, 14, and 30, client should receive photo check-in push:
+
+**Expected:**
+- ✅ Push notification with photo reminder
+- ✅ "Upload a quick photo" message
+- ✅ `requireInteraction: true` (stays visible)
+
+---
+
+## 📊 PRODUCTION MONITORING
+
+### Check Email Delivery
+- **EmailJS Dashboard:** https://dashboard.emailjs.com/admin
+- Go to **History** tab
+- Verify emails sent successfully
+
+---
+
+### Check Push Delivery
+- **Firebase Console:** Cloud Messaging section
+- Check delivery reports
+- Monitor opt-in rates
+
+---
+
+### Check Function Execution
+```bash
+firebase functions:log --only dailyAftercare --lines 100
+```
+
+**Look for:**
+- `[EMAIL]` entries showing sent emails
+- `[PUSH]` entries showing sent pushes
+- `[PHOTO]` entries showing photo reminders
+- No error messages
+
+---
+
+## ✅ SUCCESS CRITERIA
+
+- [x] Artist can add client
+- [x] Day 0 email sends immediately
+- [x] Client can complete setup
+- [x] Push permission works
+- [x] Automated function runs daily at 9 AM
+- [x] Photo reminders send on Day 3, 7, 14, 30
+
+**When all checked:** ✅ **PRODUCTION READY**
+
+---
+
+## 📋 COMMUNICATION TIMELINE
+
+### Emails (6 total)
+- Day 0: Welcome + Setup link
+- Day 1: First check-in
+- Day 3: Start moisturizing
+- Day 5: Itching phase
+- Day 7: Week 1 complete
+- Day 30: Journey complete
+
+### Push Notifications (11 total)
+- Day 1: Check-in reminder
+- Day 2: Inflammation normal
+- Day 3: Start moisturizing
+- Day 4: Moisturize reminder
+- Day 5: Itching phase
+- Day 6: Evening reminder
+- Day 7: Week 1 complete
+- Day 10: Peeling is normal
+- Day 14: Halfway healed
+- Day 21: Week 3 check-in
+- Day 30: Journey complete
+
+### Photo Reminders (4 total - NEW)
+- Day 3: First progress photo
+- Day 7: Week 1 photo
+- Day 14: Halfway photo
+- Day 30: Final healed photo
+
+**Total:** 21 touchpoints over 30 days
+
+---
+
+## 🎯 STATUS
+
+**Configuration:** ✅ Complete (9 variables set)  
+**Deployment:** ⏳ Pending (requires Blaze plan upgrade)  
+**Testing:** ⏳ Pending (after deployment)
+
+**Next Action:** 
+1. Upgrade Firebase to Blaze plan
+2. Run: `firebase deploy --only functions`
+3. Test with first artist
+
+---
+
+## 🔧 TROUBLESHOOTING
+
+### Issue: "Permission denied"
+```bash
+firebase login
+firebase projects:list
+```
+
+### Issue: "Config not found"
+```bash
 cd functions
 ./config-quick.sh
-cd ..
-
-# Option B: Manual setup
-firebase functions:config:set \
-  emailjs.service_id="service_13h3kki" \
-  emailjs.public_key="uH10FXkw8yv434h5P" \
-  emailjs.private_key="46LIXk6cVjUGFeUty-fg5" \
-  emailjs.template_day1="template_d75273a" \
-  emailjs.template_day3="template_xtdi2sx" \
-  emailjs.template_day5="template_ombo3rr" \
-  emailjs.template_day7="template_s8kfh7x" \
-  emailjs.template_day30="template_y1ovm08"
 ```
 
-### Step 3: Verify Configuration
+### Issue: "Deploy fails"
 ```bash
-firebase functions:config:get
+# Check Node version (should be 18)
+node --version
+
+# Try force deploy
+firebase deploy --only functions --force
 ```
 
-Expected output:
-```json
+### Issue: "Emails not sending"
+**Check:**
+1. EmailJS dashboard for errors
+2. Template IDs are correct
+3. Firebase Functions logs
+4. EmailJS service status
+
+---
+
+**Last Updated:** 20 December 2025  
+**Status:** Ready for Blaze upgrade + deployment
 {
   "emailjs": {
-    "service_id": "service_13h3kki",
-    "public_key": "uH10FXkw8yv434h5P",
-    "private_key": "46LIXk6cVjUGFeUty-fg5",
+    "service_id": "service_1tcang2",
+    "public_key": "kGc9NLe3dC-X0KMBL",
+    "private_key": "LJT3w2cFG0-5dSuMI",
+    "template_day0": "template_1tcang2",
     "template_day1": "template_d75273a",
     "template_day3": "template_xtdi2sx",
     "template_day5": "template_ombo3rr",

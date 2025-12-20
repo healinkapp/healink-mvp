@@ -88,10 +88,11 @@ exports.dailyAftercare = functions
         processedCount++;
         emailsSent += results.emailSent ? 1 : 0;
         pushesSent += results.pushSent ? 1 : 0;
+        const photoRemindersSent = results.photoReminderSent ? 1 : 0;
       }
 
-      console.log(`[SCHEDULER] Daily aftercare complete - Processed: ${processedCount}, Emails: ${emailsSent}, Pushes: ${pushesSent}`);
-      return { success: true, processedCount, emailsSent, pushesSent };
+      console.log(`[SCHEDULER] Daily aftercare complete - Processed: ${processedCount}, Emails: ${emailsSent}, Pushes: ${pushesSent}, Photo Reminders: ${photoRemindersSent}`);
+      return { success: true, processedCount, emailsSent, pushesSent, photoRemindersSent };
 
     } catch (error) {
       console.error('[SCHEDULER] Fatal error:', error);
@@ -105,15 +106,17 @@ exports.dailyAftercare = functions
  * @param {Object} client - Client data
  * @param {Object} artist - Artist data
  * @param {number} day - Days since tattoo
- * @returns {Promise<{emailSent: boolean, pushSent: boolean}>}
+ * @returns {Promise<{emailSent: boolean, pushSent: boolean, photoReminderSent: boolean}>}
  */
 async function sendCommunications(clientId, client, artist, day) {
   const emailDays = [1, 3, 5, 7, 30]; // Day 0 sent by artist
   const pushDays = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 30];
+  const photoDays = [3, 7, 14, 30]; // Photo check-in reminders
 
   const results = {
     emailSent: false,
-    pushSent: false
+    pushSent: false,
+    photoReminderSent: false
   };
 
   // Send Email if needed
@@ -126,6 +129,12 @@ async function sendCommunications(clientId, client, artist, day) {
   if (pushDays.includes(day)) {
     const sent = await sendPush(clientId, client, day);
     results.pushSent = sent;
+  }
+
+  // Send Photo Reminder if needed
+  if (photoDays.includes(day)) {
+    const sent = await sendPhotoReminder(clientId, client, day);
+    results.photoReminderSent = sent;
   }
 
   return results;
