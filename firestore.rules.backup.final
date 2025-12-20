@@ -31,28 +31,27 @@ service cloud.firestore {
       // READ RULES
       // ──────────────────────────────────────────
       
-      // 1. Unauthenticated client setup (CRITICAL - MUST BE FIRST)
-      // Allows anyone to read client documents that haven't completed setup
-      // This is safe because uniqueToken is unguessable (30+ random chars)
-      allow read: if (
-        !('role' in resource.data) || 
-        (resource.data.role == 'client' && resource.data.hasCompletedSetup == false)
-      );
-      
-      // 2. Users can read their own document (by UID)
+      // 1. Users can read their own document (by UID)
       allow read: if isOwner(userId);
       
-      // 3. Users can query documents by their email (for login)
+      // 2. Users can query documents by their email (for login)
       allow read: if (
         isSignedIn() &&
         resource.data.email == request.auth.token.email
       );
       
-      // 4. Artists can read their clients
+      // 3. Artists can read their clients
       allow read: if (
         isArtist() && 
         resource.data.role == 'client' &&
         resource.data.artistId == request.auth.uid
+      );
+      
+      // 4. Unauthenticated client setup (CRITICAL for setup flow)
+      // Allows query by uniqueToken before client has auth account
+      allow read: if (
+        resource.data.role == 'client' &&
+        resource.data.hasCompletedSetup == false
       );
       
       // ──────────────────────────────────────────
@@ -132,4 +131,4 @@ service cloud.firestore {
       allow read, write: if false;
     }
   }
-} 
+}

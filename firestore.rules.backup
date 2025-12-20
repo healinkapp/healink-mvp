@@ -1,0 +1,108 @@
+rules_version = '2';
+// Last updated: 2025-12-20 - Production-Ready Rules with Client Setup Fix
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isArtist() {
+      return isSignedIn() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'artist';
+    }
+    
+    function isClient() {
+      return isSignedIn() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'client';
+    }
+    
+    // Prevent critical field changes
+    function roleNotChanged() {
+      return !('role' in request.resource.data) || 
+             request.resource.data.role == resource.data.role;
+    }
+    
+    function artistIdNotChanged() {
+      return !('artistId' in request.resource.data) || 
+             request.resource.data.artistId == resource.data.artistId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      
+      // READ rules
+      allow read: if (
+        // Authenticated users can read their own data
+        isOwner(userId) || 
+        // Artists can read their clients
+        isArtist() ||
+        // SPECIAL: Allow unauthenticated read for client setup validation
+        // Client can read their own pending setup document
+        (resource.data.role == 'client' && 
+         resource.data.hasCompletedSetup == false &&
+         resource.data.uniqueToken != null)
+      );
+      
+      // CREATE rules (artist creates client during onboarding)
+      allow create: if isArtist() && 
+                       request.resource.data.role == 'client' &&
+                       request.resource.data.artistId == request.auth.uid;
+      
+      // UPDATE rules
+      allow update: if (
+        // Artist can update their own profile
+        (isOwner(userId) && isArtist() && roleNotChanged()) ||
+        
+        // Artist can update their clients
+        (isArtist() && 
+         resource.data.artistId == request.auth.uid &&
+         artistIdNotChanged() &&
+         roleNotChanged()) ||
+        
+        // Client can update their own profile (authenticated)
+        (isOwner(userId) && isClient() && roleNotChanged() && artistIdNotChanged()) ||
+        
+        // CRITICAL: Allow setup completion by EMAIL match (not UID match)
+        // This works because Artist creates doc with random ID, but Auth creates with different UID
+        (
+          resource.data.role == 'client' &&
+          resource.data.hasCompletedSetup == false &&
+          request.resource.data.hasCompletedSetup == true &&
+          roleNotChanged() &&
+          artistIdNotChanged() &&
+          // Match by email since document ID ≠ Auth UID during setup
+          (request.auth != null && request.auth.token.email == resource.data.email)
+        )
+      );
+      
+      // DELETE rules (only artist can delete their clients)
+      allow delete: if isArtist() && 
+                       resource.data.artistId == request.auth.uid;
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      // Users can read their own notifications
+      allow read: if isSignedIn() && 
+                     resource.data.userId == request.auth.uid;
+      
+      // Artists can create notifications for their clients
+      allow create: if isArtist();
+      
+      // Users can update/delete their own notifications (mark as read, etc.)
+      allow update, delete: if isSignedIn() && 
+                               resource.data.userId == request.auth.uid;
+    }
+    
+    // Default: deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, updateDoc, doc, limit } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { collection, query, where, getDocs, updateDoc, doc, limit, deleteField } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { db, auth } from '../config/firebase';
 import { Palette, XCircle } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
@@ -20,46 +20,100 @@ export default function ClientSetup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [authChecked, setAuthChecked] = useState(false);
 
-  // Fetch client data by token
+  // Force logout if user is authenticated (client setup requires unauthenticated access)
   useEffect(() => {
+    const checkAuthAndLogout = async () => {
+      if (auth.currentUser) {
+        console.log('[ClientSetup] User is authenticated, logging out for client setup...');
+        console.log('[ClientSetup] Current user:', auth.currentUser.email);
+        await signOut(auth);
+        console.log('[ClientSetup] Logged out successfully');
+        // Delay to ensure auth state updates
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      setAuthChecked(true);
+    };
+    
+    checkAuthAndLogout();
+  }, []);
+
+  // Fetch client data by token (only after auth check is complete)
+  useEffect(() => {
+    if (!authChecked) {
+      console.log('[ClientSetup] Waiting for auth check to complete...');
+      return;
+    }
+
     const fetchClient = async () => {
+      console.log('=== CLIENT SETUP DEBUG ===');
+      console.log('1. Token from URL:', token);
+      console.log('2. Building query...');
+      
       try {
+        // Query simplified: uniqueToken is unique, no need for role filter
+        // Firestore rule will still validate role=='client' when checking permissions
         const q = query(
           collection(db, 'users'),
           where('uniqueToken', '==', token),
-          where('role', '==', 'client'),
-          limit(1) // Required by security rules for unauthenticated queries
+          limit(1)
         );
+        
+        console.log('3. Query built successfully (simplified - single where clause)');
+        console.log('4. Executing query...');
         
         const snapshot = await getDocs(q);
         
+        console.log('5. Query executed');
+        console.log('6. Results:', snapshot.size, 'documents');
+        
         if (snapshot.empty) {
-          setError('Invalid or expired link');
+          console.log('7. NO DOCUMENTS FOUND');
+          console.log('   - Token searched:', token);
+          console.log('   - Collection: users');
+          console.log('   - Role: client');
+          setError('Invalid or expired setup link');
           setLoading(false);
           return;
         }
-
+        
         const clientDoc = snapshot.docs[0];
-        const data = { id: clientDoc.id, ...clientDoc.data() };
+        const data = clientDoc.data();
+        
+        console.log('8. DOCUMENT FOUND:');
+        console.log('   - ID:', clientDoc.id);
+        console.log('   - Email:', data.email);
+        console.log('   - Role:', data.role);
+        console.log('   - hasCompletedSetup:', data.hasCompletedSetup);
+        console.log('   - uniqueToken:', data.uniqueToken);
+        console.log('   - Token match:', data.uniqueToken === token);
         
         if (data.hasCompletedSetup) {
+          console.warn('[SETUP] ⚠️ Account already set up');
           setError('Account already set up. Please login.');
           setLoading(false);
           return;
         }
-
-        setClientData(data);
+        
+        setClientData({
+          id: clientDoc.id,
+          ...data
+        });
         setLoading(false);
-      } catch (err) {
-        console.error('[ClientSetup] Error fetching client:', err);
+        
+      } catch (error) {
+        console.log('❌ QUERY FAILED');
+        console.log('Error code:', error.code);
+        console.log('Error message:', error.message);
+        console.log('Full error:', error);
         setError('Error loading account info');
         setLoading(false);
       }
     };
 
     fetchClient();
-  }, [token]);
+  }, [token, authChecked]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -79,22 +133,34 @@ export default function ClientSetup() {
     setSubmitting(true);
 
     try {
+      console.log('=== [SETUP] CREATING ACCOUNT ===');
+      console.log('[SETUP] Client document ID:', clientData.id);
+      console.log('[SETUP] Client email:', clientData.email);
+      
       // Step 1: Create Firebase Auth account
       const userCredential = await createUserWithEmailAndPassword(auth, clientData.email, password);
       
-      if (import.meta.env.DEV) {
-        console.log('[ClientSetup] Auth account created, UID:', userCredential.user.uid);
-        console.log('[ClientSetup] Updating Firestore document:', clientData.id);
-      }
-
-      // Step 2: Update Firestore document with hasCompletedSetup
-      await updateDoc(doc(db, 'users', clientData.id), {
-        hasCompletedSetup: true
+      console.log('✅ [SETUP] Auth account created:', {
+        authUID: userCredential.user.uid,
+        email: userCredential.user.email
       });
       
-      if (import.meta.env.DEV) {
-        console.log('[ClientSetup] Firestore updated successfully');
-      }
+      console.log('[SETUP] ⚠️ CRITICAL: Firestore doc ID (' + clientData.id + ') ≠ Auth UID (' + userCredential.user.uid + ')');
+      console.log('[SETUP] This is CORRECT. They are linked by EMAIL.');
+
+      // Step 2: Update Firestore document with hasCompletedSetup
+      console.log('[SETUP] Updating Firestore document:', clientData.id);
+      
+      await updateDoc(doc(db, 'users', clientData.id), {
+        hasCompletedSetup: true,
+        uniqueToken: deleteField()  // Delete one-time setup token for security
+      });
+      
+      console.log('✅ [SETUP] Firestore updated successfully:', {
+        documentId: clientData.id,
+        hasCompletedSetup: true,
+        uniqueToken: 'DELETED'
+      });
 
       // Step 3: Request push notification permission (non-blocking)
       requestPushPermission(clientData.id)
@@ -131,7 +197,8 @@ export default function ClientSetup() {
           
           // Update hasCompletedSetup if not already set
           await updateDoc(doc(db, 'users', clientData.id), {
-            hasCompletedSetup: true
+            hasCompletedSetup: true,
+            uniqueToken: deleteField()  // Delete token in recovery flow too
           });
           
           showToast('Welcome back!', 'success');

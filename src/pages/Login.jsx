@@ -37,14 +37,20 @@ function Login() {
         navigate('/dashboard');
       } else {
         // Login - Check role and redirect accordingly
+        console.log('=== [LOGIN] AUTHENTICATING USER ===');
+        console.log('[LOGIN] Email:', email);
+        
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-        if (import.meta.env.DEV) {
-          console.log('[Login] User authenticated:', userCredential.user.email);
-        }
+        console.log('✅ [LOGIN] Firebase Auth successful:', {
+          authUID: userCredential.user.uid,
+          email: userCredential.user.email
+        });
 
         // Get user role by EMAIL (document ID may differ from Auth UID for clients)
         try {
+          console.log('[LOGIN] Querying Firestore for role...');
+          
           const q = query(
             collection(db, 'users'),
             where('email', '==', userCredential.user.email)
@@ -52,7 +58,10 @@ function Login() {
           
           const snapshot = await getDocs(q);
           
+          console.log('[LOGIN] Query results:', snapshot.size, 'documents');
+          
           if (snapshot.empty) {
+            console.error('❌ [LOGIN] No Firestore document found for:', userCredential.user.email);
             await signOut(auth);
             setError('Account not found. Please contact support.');
             setLoading(false);
@@ -62,16 +71,22 @@ function Login() {
           const userData = snapshot.docs[0].data();
           const role = userData.role;
           
-          if (import.meta.env.DEV) {
-            console.log('[Login] User role:', role);
-          }
+          console.log('✅ [LOGIN] User document found:', {
+            documentId: snapshot.docs[0].id,
+            email: userData.email,
+            role: role,
+            hasCompletedSetup: userData.hasCompletedSetup
+          });
 
           // Redirect based on role
           if (role === 'artist') {
+            console.log('[LOGIN] Redirecting to /dashboard (artist)');
             navigate('/dashboard');
           } else if (role === 'client') {
+            console.log('[LOGIN] Redirecting to /client/dashboard (client)');
             navigate('/client/dashboard');
           } else {
+            console.error('[LOGIN] Invalid role:', role);
             await signOut(auth);
             setError('Invalid account type');
             setLoading(false);

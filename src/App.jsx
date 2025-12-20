@@ -5,6 +5,7 @@ import { auth } from './config/firebase';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
@@ -52,6 +53,9 @@ function App() {
           {/* Forgot Password Page */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
           
+          {/* Reset Password Page */}
+          <Route path="/reset-password" element={<ResetPassword />} />
+          
           {/* Artist Dashboard - With Layout */}
           <Route path="/dashboard" element={
             <AppLayout userRole="artist">
@@ -74,7 +78,7 @@ function App() {
           } />
           
           {/* Client Setup Page - No Layout */}
-          <Route path="/setup/:token" element={<ClientSetup />} />
+          <Route path="/client/setup/:token" element={<ClientSetup />} />
           
           {/* Client Dashboard - With Layout */}
           <Route path="/client/dashboard" element={

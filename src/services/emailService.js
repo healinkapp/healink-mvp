@@ -154,7 +154,7 @@ export async function sendHealingEmail(client, artist, dayNumber, setupToken = n
         throw new Error('Setup token required for Day 0 email');
       }
 
-      const setupLink = `${window.location.origin}/setup/${setupToken}`;
+      const setupLink = `${window.location.origin}/client/setup/${setupToken}`;
       const studioName = artist.studioName || artist.name || 'Your Tattoo Studio';
 
       return await sendDay0Email({

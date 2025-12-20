@@ -275,12 +275,17 @@ function Dashboard() {
     setLoadingForm(true);
 
     try {
+      console.log('=== [ARTIST] CREATING CLIENT ===');
+      console.log('[ARTIST] Artist UID:', auth.currentUser.uid);
+      console.log('[ARTIST] Client email:', formData.email);
+      
       let photoURL = null;
 
       // Upload photo to Cloudinary
       if (formData.photo) {
         try {
           photoURL = await uploadToCloudinary(formData.photo);
+          console.log('[ARTIST] Photo uploaded:', photoURL);
         } catch (uploadError) {
           console.error('[Dashboard] Photo upload failed:', uploadError);
           showToast('Failed to upload photo. Please try again.', 'error');
@@ -292,6 +297,8 @@ function Dashboard() {
       // Generate unique token for magic link
       const uniqueToken = Math.random().toString(36).substring(2, 15) + 
                          Math.random().toString(36).substring(2, 15);
+      
+      console.log('[ARTIST] Generated uniqueToken:', uniqueToken);
 
       // Add client to Firestore as a user
       const clientData = {
@@ -310,7 +317,16 @@ function Dashboard() {
         createdAt: serverTimestamp()
       };
 
-      await addDoc(collection(db, 'users'), clientData);
+      const docRef = await addDoc(collection(db, 'users'), clientData);
+      
+      console.log('✅ [ARTIST] Firestore document created:', {
+        documentId: docRef.id,
+        email: clientData.email,
+        role: clientData.role,
+        artistId: clientData.artistId,
+        hasCompletedSetup: clientData.hasCompletedSetup,
+        uniqueToken: clientData.uniqueToken
+      });
 
       // Send Day 0 email using new email service
       try {
@@ -320,7 +336,7 @@ function Dashboard() {
           clientEmail: formData.email,
           clientName: formData.name,
           studioName: studioName,
-          setupLink: `${window.location.origin}/setup/${uniqueToken}`,
+          setupLink: `${window.location.origin}/client/setup/${uniqueToken}`,
           tattooPhoto: photoURL
         });
         

@@ -91,6 +91,23 @@ npm run build
 firebase deploy
 ```
 
+### Deploying Firestore Rules
+
+Firestore security rules are defined in `firestore.rules`. To deploy rules:
+
+```bash
+# Deploy only rules (safe, doesn't affect code or functions)
+firebase deploy --only firestore:rules
+
+# Verify deployment
+firebase use  # Check active project
+```
+
+**Important:**
+- Always test rules in staging/emulator first
+- Keep backup: `cp firestore.rules firestore.rules.backup`
+- See [FIRESTORE_RULES_CHANGELOG.md](./FIRESTORE_RULES_CHANGELOG.md) for rule changes
+
 ---
 
 ## 📊 Project Structure

@@ -1,5 +1,5 @@
 // Healink PWA Service Worker
-// Version: 1.1.0 (Added Firebase Cloud Messaging)
+// Version: 1.2.0 (Fixed mobile caching issues)
 
 // Import Firebase SDKs for background messaging
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
@@ -21,7 +21,7 @@ const messaging = firebase.messaging();
 
 console.log('[Service Worker] Firebase Messaging initialized');
 
-const CACHE_VERSION = 'healink-v1';
+const CACHE_VERSION = 'healink-v2'; // ← BUMPED VERSION
 const CACHE_NAME = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const IMAGES_CACHE = `${CACHE_VERSION}-images`;
@@ -37,13 +37,15 @@ const STATIC_ASSETS = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
+  console.log('[Service Worker] Installing v1.2.0...');
   
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[Service Worker] Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
+        return cache.addAll(STATIC_ASSETS).catch(err => {
+          console.warn('[Service Worker] Cache add failed (normal in dev):', err);
+        });
       })
       .then(() => {
         console.log('[Service Worker] Installation complete');

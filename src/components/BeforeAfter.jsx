@@ -66,7 +66,7 @@ export default function BeforeAfter({ beforePhoto, afterPhoto }) {
       {/* Footer Message */}
       <div className="mt-6 text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
         <p className="text-sm font-semibold text-gray-900">
-          🎉 Congratulations on completing your healing journey!
+          Congratulations on completing your healing journey!
         </p>
         <p className="text-xs text-gray-600 mt-1">
           Your dedication to proper aftercare shows in these amazing results

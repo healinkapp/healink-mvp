@@ -78,9 +78,9 @@ export default function ClientDashboard() {
         return;
       }
 
-      if (import.meta.env.DEV) {
-        console.log('[ClientDashboard] Auth user detected:', user.email);
-      }
+      console.log('=== [DASHBOARD] LOADING CLIENT ===');
+      console.log('[DASHBOARD] Auth user email:', user.email);
+      console.log('[DASHBOARD] Auth user UID:', user.uid);
 
       try {
         // Fetch client data BY EMAIL (document ID may differ from Auth UID)
@@ -92,8 +92,10 @@ export default function ClientDashboard() {
         
         const snapshot = await getDocs(q);
         
+        console.log('[DASHBOARD] Query results:', snapshot.size, 'documents');
+        
         if (snapshot.empty) {
-          console.error('[ClientDashboard] No client document found for:', user.email);
+          console.error('❌ [DASHBOARD] No client document found for email:', user.email);
           
           // Check if user might be an artist instead
           const artistQuery = query(
@@ -104,10 +106,12 @@ export default function ClientDashboard() {
           const artistSnapshot = await getDocs(artistQuery);
           
           if (!artistSnapshot.empty) {
+            console.log('[DASHBOARD] User is an artist, redirecting to /dashboard');
             navigate('/dashboard');
             return;
           }
           
+          console.error('[DASHBOARD] No document found with email:', user.email);
           showToast('Account not found. Please contact support.', 'error');
           await signOut(auth);
           navigate('/login');
@@ -117,9 +121,14 @@ export default function ClientDashboard() {
         const userData = snapshot.docs[0].data();
         const docId = snapshot.docs[0].id;
         
-        if (import.meta.env.DEV) {
-          console.log('[ClientDashboard] Client data loaded:', docId);
-        }
+        console.log('✅ [DASHBOARD] Client document found:', {
+          documentId: docId,
+          email: userData.email,
+          name: userData.name,
+          hasCompletedSetup: userData.hasCompletedSetup,
+          artistId: userData.artistId,
+          healingDay: userData.healingDay
+        });
 
         const data = {
           ...userData,

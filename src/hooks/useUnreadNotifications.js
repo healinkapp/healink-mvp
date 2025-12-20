@@ -15,10 +15,11 @@ export function useUnreadNotifications() {
       return;
     }
 
-    // Query unread notifications for this artist
+    // Query unread notifications for current user (artist or client)
+    // Use userId instead of artistId to support both roles
     const q = query(
       collection(db, 'notifications'),
-      where('artistId', '==', auth.currentUser.uid),
+      where('userId', '==', auth.currentUser.uid),
       where('read', '==', false)
     );
 
@@ -28,7 +29,10 @@ export function useUnreadNotifications() {
         setUnreadCount(snapshot.docs.length);
       },
       (error) => {
-        console.error('[useUnreadNotifications] Error listening to notifications:', error);
+        // Silently fail if collection doesn't exist or permission denied
+        if (import.meta.env.DEV) {
+          console.warn('[useUnreadNotifications] Could not fetch notifications:', error.code);
+        }
         setUnreadCount(0);
       }
     );
