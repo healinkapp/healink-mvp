@@ -65,18 +65,19 @@ service cloud.firestore {
          artistIdNotChanged() &&
          roleNotChanged()) ||
         
-        // Client can update their own profile
+        // Client can update their own profile (authenticated)
         (isOwner(userId) && isClient() && roleNotChanged() && artistIdNotChanged()) ||
         
-        // CRITICAL: Allow setup completion when newly authenticated
-        // This handles the race condition where user just created auth account
+        // CRITICAL: Allow setup completion by EMAIL match (not UID match)
+        // This works because Artist creates doc with random ID, but Auth creates with different UID
         (
-          isOwner(userId) &&
           resource.data.role == 'client' &&
           resource.data.hasCompletedSetup == false &&
           request.resource.data.hasCompletedSetup == true &&
           roleNotChanged() &&
-          artistIdNotChanged()
+          artistIdNotChanged() &&
+          // Match by email since document ID ≠ Auth UID during setup
+          (request.auth != null && request.auth.token.email == resource.data.email)
         )
       );
       
