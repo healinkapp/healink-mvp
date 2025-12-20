@@ -50,18 +50,6 @@ export default function AppLayout({ children, userRole = 'artist' }) {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg"
-      >
-        {mobileMenuOpen ? (
-          <X className="w-6 h-6 text-gray-700" />
-        ) : (
-          <Menu className="w-6 h-6 text-gray-700" />
-        )}
-      </button>
-
       {/* Mobile Overlay */}
       {mobileMenuOpen && (
         <div
@@ -79,6 +67,13 @@ export default function AppLayout({ children, userRole = 'artist' }) {
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
+        {/* Close Button - Inside Sidebar (Mobile) */}
+        <button
+          onClick={closeMobileMenu}
+          className="md:hidden absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <X className="w-5 h-5 text-gray-700" />
+        </button>
         {/* Logo */}
         <div className="p-6 border-b border-gray-100">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
@@ -143,6 +138,17 @@ export default function AppLayout({ children, userRole = 'artist' }) {
 
       {/* Main Content - Scrollable, muda baseado na rota */}
       <main className="flex-1 overflow-y-auto">
+        {/* Mobile Header with Hamburger - Only visible on mobile */}
+        <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Menu className="w-6 h-6 text-gray-700" />
+          </button>
+          <h2 className="text-lg font-semibold text-gray-900">Healink</h2>
+        </div>
+        
         {children}
       </main>
     </div>
