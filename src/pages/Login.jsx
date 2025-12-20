@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { useNavigate, Link } from 'react-router-dom';
-import { getUserRole } from '../utils/getUserRole';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 function Login() {
@@ -40,24 +39,47 @@ function Login() {
         // Login - Check role and redirect accordingly
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-        // Get user role from Firestore (pass both userId and email)
-        const role = await getUserRole(userCredential.user.uid, userCredential.user.email);
-
-        if (!role) {
-          await signOut(auth);
-          setError('Account not found. Please contact support.');
-          setLoading(false);
-          return;
+        if (import.meta.env.DEV) {
+          console.log('[Login] User authenticated:', userCredential.user.email);
         }
 
-        // Redirect based on role
-        if (role === 'artist') {
-          navigate('/dashboard');
-        } else if (role === 'client') {
-          navigate('/client/dashboard');
-        } else {
+        // Get user role by EMAIL (document ID may differ from Auth UID for clients)
+        try {
+          const q = query(
+            collection(db, 'users'),
+            where('email', '==', userCredential.user.email)
+          );
+          
+          const snapshot = await getDocs(q);
+          
+          if (snapshot.empty) {
+            await signOut(auth);
+            setError('Account not found. Please contact support.');
+            setLoading(false);
+            return;
+          }
+
+          const userData = snapshot.docs[0].data();
+          const role = userData.role;
+          
+          if (import.meta.env.DEV) {
+            console.log('[Login] User role:', role);
+          }
+
+          // Redirect based on role
+          if (role === 'artist') {
+            navigate('/dashboard');
+          } else if (role === 'client') {
+            navigate('/client/dashboard');
+          } else {
+            await signOut(auth);
+            setError('Invalid account type');
+            setLoading(false);
+          }
+        } catch (roleError) {
+          console.error('[Login] Error fetching role:', roleError);
           await signOut(auth);
-          setError('Invalid account type');
+          setError('Account not found. Please contact support.');
           setLoading(false);
         }
       }

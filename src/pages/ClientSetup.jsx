@@ -79,16 +79,24 @@ export default function ClientSetup() {
     setSubmitting(true);
 
     try {
-      // Create Firebase Auth account
-      await createUserWithEmailAndPassword(auth, clientData.email, password);
+      // Step 1: Create Firebase Auth account
+      const userCredential = await createUserWithEmailAndPassword(auth, clientData.email, password);
+      
+      if (import.meta.env.DEV) {
+        console.log('[ClientSetup] Auth account created, UID:', userCredential.user.uid);
+        console.log('[ClientSetup] Updating Firestore document:', clientData.id);
+      }
 
-      // Update Firestore
+      // Step 2: Update Firestore document with hasCompletedSetup
       await updateDoc(doc(db, 'users', clientData.id), {
         hasCompletedSetup: true
       });
+      
+      if (import.meta.env.DEV) {
+        console.log('[ClientSetup] Firestore updated successfully');
+      }
 
-      // Request push notification permission (non-blocking)
-      // This happens in background - don't wait for it
+      // Step 3: Request push notification permission (non-blocking)
       requestPushPermission(clientData.id)
         .then((result) => {
           if (import.meta.env.DEV) {
@@ -103,12 +111,16 @@ export default function ClientSetup() {
           if (import.meta.env.DEV) {
             console.warn('[ClientSetup] Push permission request failed:', error);
           }
-          // Don't block user flow - they can enable later
         });
 
-      // Redirect to client dashboard
-      showToast('Account created successfully!', 'success');
-      navigate('/client/dashboard');
+      // Step 4: Success! Show message and redirect
+      showToast('Welcome to Healink! Your account is ready.', 'success');
+      
+      // Give a moment for Firestore to propagate (prevent race condition)
+      setTimeout(() => {
+        navigate('/client/dashboard');
+      }, 300);
+      
     } catch (err) {
       console.error('[ClientSetup] Setup error:', err);
       
@@ -116,21 +128,26 @@ export default function ClientSetup() {
       if (err.code === 'auth/email-already-in-use') {
         try {
           await signInWithEmailAndPassword(auth, clientData.email, password);
+          
+          // Update hasCompletedSetup if not already set
           await updateDoc(doc(db, 'users', clientData.id), {
             hasCompletedSetup: true
           });
           
-          // Request push notification permission (non-blocking)
-          if (import.meta.env.DEV) {
-            requestPushPermission(clientData.id).catch(console.warn);
-          } else {
-            requestPushPermission(clientData.id).catch(() => {});
-          }
+          showToast('Welcome back!', 'success');
           
-          navigate('/client/dashboard');
+          // Request push permission (non-blocking)
+          requestPushPermission(clientData.id).catch(() => {});
+          
+          setTimeout(() => {
+            navigate('/client/dashboard');
+          }, 300);
         } catch (loginErr) {
-          setError('Account exists but password incorrect');
+          console.error('[ClientSetup] Login failed:', loginErr);
+          setError('Account exists but password is incorrect');
         }
+      } else if (err.code === 'permission-denied') {
+        setError('Permission error. Please try again or contact support.');
       } else {
         setError('Error creating account: ' + err.message);
       }

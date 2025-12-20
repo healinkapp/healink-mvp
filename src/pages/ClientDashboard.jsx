@@ -78,23 +78,12 @@ export default function ClientDashboard() {
         return;
       }
 
-      // Verify user is a client (pass both userId and email)
-      const role = await getUserRole(user.uid, user.email);
-      
-      if (role !== 'client') {
-        if (role === 'artist') {
-          navigate('/dashboard');
-        } else {
-          await signOut(auth);
-          navigate('/login');
-        }
-        return;
+      if (import.meta.env.DEV) {
+        console.log('[ClientDashboard] Auth user detected:', user.email);
       }
 
-      setCheckingRole(false);
-
       try {
-        // Fetch client data
+        // Fetch client data BY EMAIL (document ID may differ from Auth UID)
         const q = query(
           collection(db, 'users'),
           where('email', '==', user.email),
@@ -104,23 +93,49 @@ export default function ClientDashboard() {
         const snapshot = await getDocs(q);
         
         if (snapshot.empty) {
-          console.error('[ClientDashboard] No client data found');
-          showToast('No account found. Please contact your artist.', 'error');
-          setLoading(false);
+          console.error('[ClientDashboard] No client document found for:', user.email);
+          
+          // Check if user might be an artist instead
+          const artistQuery = query(
+            collection(db, 'users'),
+            where('email', '==', user.email),
+            where('role', '==', 'artist')
+          );
+          const artistSnapshot = await getDocs(artistQuery);
+          
+          if (!artistSnapshot.empty) {
+            navigate('/dashboard');
+            return;
+          }
+          
+          showToast('Account not found. Please contact support.', 'error');
+          await signOut(auth);
+          navigate('/login');
           return;
         }
 
+        const userData = snapshot.docs[0].data();
+        const docId = snapshot.docs[0].id;
+        
+        if (import.meta.env.DEV) {
+          console.log('[ClientDashboard] Client data loaded:', docId);
+        }
+
         const data = {
-          ...snapshot.docs[0].data(),
-          id: snapshot.docs[0].id,
-          photos: snapshot.docs[0].data().photos || []
+          ...userData,
+          id: docId,
+          photos: userData.photos || []
         };
+        
         setClientData(data);
+        setCheckingRole(false);
         setLoading(false);
+        
       } catch (error) {
         console.error('[ClientDashboard] Error fetching client data:', error);
         showToast('Failed to load your data. Please try again.', 'error');
         setLoading(false);
+        setCheckingRole(false);
       }
     });
 
