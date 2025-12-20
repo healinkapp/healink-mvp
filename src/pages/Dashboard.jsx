@@ -74,7 +74,6 @@ function Dashboard() {
       const role = await getUserRole(user.uid, user.email);
       
       if (role !== 'artist') {
-        console.log('❌ Not an artist, redirecting...');
         if (role === 'client') {
           navigate('/client/dashboard');
         } else {
@@ -83,8 +82,6 @@ function Dashboard() {
         }
         return;
       }
-
-      console.log('✅ Dashboard: Artist authenticated:', user.email);
       
       // Load artist data from Firestore
       try {
@@ -97,7 +94,7 @@ function Dashboard() {
           });
         }
       } catch (error) {
-        console.error('Error loading artist data:', error);
+        console.error('[Dashboard] Error loading artist data:', error);
       }
       
       setAuthReady(true);
@@ -107,23 +104,15 @@ function Dashboard() {
     return () => unsubscribe();
   }, [navigate]);
 
-  // Debug auth state
-  useEffect(() => {
-    console.log('🔐 Auth state:', {
-      user: auth.currentUser,
-      uid: auth.currentUser?.uid,
-      email: auth.currentUser?.email
-    });
-  }, []);
-
   // Fetch clients in real-time
   useEffect(() => {
     if (!auth.currentUser) {
-      console.log('❌ No authenticated user');
       return;
     }
 
-    console.log('🔍 Fetching clients for artist:', auth.currentUser.uid);
+    if (import.meta.env.DEV) {
+      console.log('[Dashboard] Fetching clients for artist:', auth.currentUser.uid);
+    }
 
     // Query clients for this artist
     const q = query(
@@ -137,12 +126,12 @@ function Dashboard() {
     const unsubscribe = onSnapshot(
       q, 
       (snapshot) => {
-        console.log('📊 Query returned', snapshot.docs.length, 'clients');
+        if (import.meta.env.DEV) {
+          console.log('[Dashboard] Query returned', snapshot.docs.length, 'clients');
+        }
         
         const clientsData = snapshot.docs.map(doc => {
-          const data = { id: doc.id, ...doc.data() };
-          console.log('Client:', data);
-          return data;
+          return { id: doc.id, ...doc.data() };
         });
         
         // Calculate stats
@@ -155,13 +144,6 @@ function Dashboard() {
           c.healingDay >= 30 || c.status === 'healed'
         ).length;
         
-        console.log('📈 Stats calculated:', {
-          totalClients,
-          activeHealing,
-          criticalCare,
-          completed
-        });
-        
         setClients(clientsData);
         setStats({
           totalClients,
@@ -172,9 +154,7 @@ function Dashboard() {
         setLoadingClients(false);
       },
       (error) => {
-        console.error('Firestore query error:', error);
-        console.error('Error code:', error.code);
-        console.error('Error message:', error.message);
+        console.error('[Dashboard] Firestore query error:', error);
         
         // Show user-friendly error
         showToast('Failed to load clients. Please refresh the page.', 'error');
@@ -210,7 +190,7 @@ function Dashboard() {
       showToast('See you soon!', 'info');
       navigate('/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('[Dashboard] Logout error:', error);
       showToast('Failed to logout', 'error');
     }
   };
@@ -305,9 +285,8 @@ function Dashboard() {
       if (formData.photo) {
         try {
           photoURL = await uploadToCloudinary(formData.photo);
-          console.log('Photo uploaded to Cloudinary:', photoURL);
         } catch (uploadError) {
-          console.error('Photo upload failed:', uploadError);
+          console.error('[Dashboard] Photo upload failed:', uploadError);
           showToast('Failed to upload photo. Please try again.', 'error');
           setLoadingForm(false);
           return;
@@ -329,15 +308,13 @@ function Dashboard() {
         profilePhoto: photoURL,
         healingDay: 0, // Always starts at Day 0
         status: 'healing', // Always healing when just added
-        accountSetup: false,
+        hasCompletedSetup: false,
         photos: photoURL ? [photoURL] : [],
         uniqueToken: uniqueToken,
         createdAt: serverTimestamp()
       };
 
       await addDoc(collection(db, 'users'), clientData);
-
-      console.log('Client added successfully:', clientData);
 
       // Send Day 0 email using new email service
       try {
@@ -351,10 +328,9 @@ function Dashboard() {
           tattooPhoto: photoURL
         });
         
-        console.log('✅ Client added and Day 0 email sent!');
         showToast('Client added and welcome email sent!', 'success');
       } catch (emailError) {
-        console.warn('⚠️ Client added but email failed:', emailError);
+        console.warn('[Dashboard] Client added but email failed:', emailError);
         showToast('Client added, but email delivery failed', 'warning');
       }
 
@@ -364,7 +340,7 @@ function Dashboard() {
       setPhotoPreview(null);
       setShowModal(false);
     } catch (error) {
-      console.error('Error adding client:', error);
+      console.error('[Dashboard] Error adding client:', error);
       showToast('Failed to add client: ' + error.message, 'error');
     } finally {
       setLoadingForm(false);

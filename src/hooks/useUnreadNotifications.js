@@ -28,7 +28,7 @@ export function useUnreadNotifications() {
         setUnreadCount(snapshot.docs.length);
       },
       (error) => {
-        console.error('Error listening to notifications:', error);
+        console.error('[useUnreadNotifications] Error listening to notifications:', error);
         setUnreadCount(0);
       }
     );

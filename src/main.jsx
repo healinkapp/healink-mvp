@@ -19,7 +19,9 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        console.log('✅ Service Worker registered successfully:', registration.scope);
+        if (import.meta.env.DEV) {
+          console.log('[SW] Service Worker registered:', registration.scope);
+        }
         
         // Check for updates periodically
         setInterval(() => {
@@ -27,7 +29,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
         }, 60000); // Check every minute
       })
       .catch((error) => {
-        console.error('❌ Service Worker registration failed:', error);
+        console.error('[SW] Service Worker registration failed:', error);
       });
   });
 }

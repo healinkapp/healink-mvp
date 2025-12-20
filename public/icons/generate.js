@@ -42,9 +42,9 @@ fs.writeFileSync(path.join(__dirname, 'icon-192.png'), icon192);
 const icon512 = createSimplePNG(512, '#0F172A', 'H');
 fs.writeFileSync(path.join(__dirname, 'icon-512.png'), icon512);
 
-console.log('\n✅ Icon placeholders created!');
-console.log('⚠️  These are minimal placeholders.');
-console.log('📝 Use generator.html or online tool to create proper icons.');
+console.log('\n[SUCCESS] Icon placeholders created!');
+console.log('[WARNING] These are minimal placeholders.');
+console.log('[INFO] Use generator.html or online tool to create proper icons.');
 console.log('\nTo use generator.html:');
 console.log('1. Open public/icons/generator.html in browser');
 console.log('2. Right-click each canvas and "Save Image As..."');

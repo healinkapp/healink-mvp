@@ -36,7 +36,7 @@ function ForgotPassword() {
       showToast('Password reset email sent successfully!', 'success');
       
     } catch (err) {
-      console.error('Password reset error:', err);
+      console.error('[ForgotPassword] Password reset error:', err);
       
       // Translate Firebase error codes
       let errorMessage = 'Failed to send reset email. Please try again';

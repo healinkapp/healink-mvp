@@ -21,7 +21,8 @@ import {
   Camera, 
   Save, 
   X,
-  Sparkles 
+  Sparkles,
+  AlertCircle 
 } from 'lucide-react';
 
 /**
@@ -120,7 +121,7 @@ function Settings() {
           setPhotoPreview(userData.photoURL);
         }
       } catch (error) {
-        console.error('Error loading user data:', error);
+        console.error('[Settings] Error loading user data:', error);
         showToast('Failed to load user data', 'error');
       } finally {
         setLoading(false);
@@ -238,7 +239,7 @@ function Settings() {
       showToast('Profile updated successfully', 'success');
       setShowEmailConfirm(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('[Settings] Error updating profile:', error);
       
       // Handle specific errors
       if (error.code === 'auth/requires-recent-login') {
@@ -287,7 +288,7 @@ function Settings() {
       showToast('Password changed successfully', 'success');
       setShowPasswordConfirm(false);
     } catch (error) {
-      console.error('Error changing password:', error);
+      console.error('[Settings] Error changing password:', error);
       
       if (error.code === 'auth/wrong-password') {
         showToast('Current password is incorrect', 'error');
@@ -347,7 +348,7 @@ function Settings() {
 
       showToast('Photo updated successfully', 'success');
     } catch (error) {
-      console.error('Error uploading photo:', error);
+      console.error('[Settings] Error uploading photo:', error);
       showToast('Failed to upload photo', 'error');
       // Reset preview on error
       setPhotoPreview(userData.photoURL);
@@ -489,8 +490,9 @@ function Settings() {
                   <p className="text-red-500 text-sm mt-1">{profileErrors.email}</p>
                 )}
                 {profileForm.email !== userData.email && (
-                  <p className="text-orange-600 text-sm mt-1">
-                    ⚠️ Changing your email will require you to log in again
+                  <p className="text-orange-600 text-sm mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    Changing your email will require you to log in again
                   </p>
                 )}
               </div>

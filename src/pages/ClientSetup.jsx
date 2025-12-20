@@ -43,7 +43,7 @@ export default function ClientSetup() {
         const clientDoc = snapshot.docs[0];
         const data = { id: clientDoc.id, ...clientDoc.data() };
         
-        if (data.accountSetup) {
+        if (data.hasCompletedSetup) {
           setError('Account already set up. Please login.');
           setLoading(false);
           return;
@@ -52,7 +52,7 @@ export default function ClientSetup() {
         setClientData(data);
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching client:', err);
+        console.error('[ClientSetup] Error fetching client:', err);
         setError('Error loading account info');
         setLoading(false);
       }
@@ -84,21 +84,25 @@ export default function ClientSetup() {
 
       // Update Firestore
       await updateDoc(doc(db, 'users', clientData.id), {
-        accountSetup: true
+        hasCompletedSetup: true
       });
 
       // Request push notification permission (non-blocking)
       // This happens in background - don't wait for it
       requestPushPermission(clientData.id)
         .then((result) => {
-          if (result.success) {
-            console.log('✅ Push notifications enabled');
-          } else {
-            console.log('⚠️ Push notifications not enabled:', result.error);
+          if (import.meta.env.DEV) {
+            if (result.success) {
+              console.log('[ClientSetup] Push notifications enabled');
+            } else {
+              console.log('[ClientSetup] Push notifications not enabled:', result.error);
+            }
           }
         })
         .catch((error) => {
-          console.warn('⚠️ Push permission request failed:', error);
+          if (import.meta.env.DEV) {
+            console.warn('[ClientSetup] Push permission request failed:', error);
+          }
           // Don't block user flow - they can enable later
         });
 
@@ -106,18 +110,22 @@ export default function ClientSetup() {
       showToast('Account created successfully!', 'success');
       navigate('/client/dashboard');
     } catch (err) {
-      console.error('Setup error:', err);
+      console.error('[ClientSetup] Setup error:', err);
       
       // If account already exists, try to login
       if (err.code === 'auth/email-already-in-use') {
         try {
           await signInWithEmailAndPassword(auth, clientData.email, password);
           await updateDoc(doc(db, 'users', clientData.id), {
-            accountSetup: true
+            hasCompletedSetup: true
           });
           
           // Request push notification permission (non-blocking)
-          requestPushPermission(clientData.id).catch(console.warn);
+          if (import.meta.env.DEV) {
+            requestPushPermission(clientData.id).catch(console.warn);
+          } else {
+            requestPushPermission(clientData.id).catch(() => {});
+          }
           
           navigate('/client/dashboard');
         } catch (loginErr) {

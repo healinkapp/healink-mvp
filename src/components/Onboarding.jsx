@@ -6,7 +6,8 @@ import {
   Calendar, 
   CheckCircle2, 
   ArrowRight,
-  Sparkles 
+  Sparkles,
+  Lightbulb 
 } from 'lucide-react';
 
 /**
@@ -123,8 +124,9 @@ function Onboarding({ isOpen, onClose, onComplete }) {
           
           {/* Tip Box */}
           <div className="bg-gray-50 rounded-xl p-4 mb-6">
-            <p className="text-sm text-gray-700">
-              <span className="font-semibold">💡 Tip:</span> {step.tip}
+            <p className="text-sm text-gray-700 flex items-start gap-2">
+              <Lightbulb className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+              <span><span className="font-semibold">Tip:</span> {step.tip}</span>
             </p>
           </div>
 

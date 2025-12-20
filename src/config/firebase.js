@@ -31,14 +31,16 @@ export const getMessagingInstance = async () => {
     const supported = await isSupported();
     if (supported) {
       const messaging = getMessaging(app);
-      console.log('✅ Firebase Messaging initialized');
+      if (import.meta.env.DEV) {
+        console.log('[Firebase] Messaging initialized');
+      }
       return messaging;
     } else {
-      console.warn('⚠️ Firebase Messaging not supported in this browser');
+      console.warn('[Firebase] Messaging not supported in this browser');
       return null;
     }
   } catch (error) {
-    console.warn('⚠️ Firebase Messaging initialization failed:', error.message);
+    console.warn('[Firebase] Messaging initialization failed:', error.message);
     return null;
   }
 };
@@ -46,8 +48,10 @@ export const getMessagingInstance = async () => {
 // Set persistence to LOCAL (survives page refresh)
 setPersistence(auth, browserLocalPersistence)
   .then(() => {
-    console.log('✅ Auth persistence set to LOCAL');
+    if (import.meta.env.DEV) {
+      console.log('[Firebase] Auth persistence set to LOCAL');
+    }
   })
   .catch((error) => {
-    console.error('❌ Auth persistence error:', error);
+    console.error('[Firebase] Auth persistence error:', error);
   });

@@ -31,7 +31,7 @@ export function getTemplateId(dayNumber) {
   const templateId = TEMPLATE_MAP[dayNumber];
   
   if (!templateId) {
-    console.warn(`⚠️ No template configured for Day ${dayNumber}`);
+    console.warn(`[emailService] No template configured for Day ${dayNumber}`);
     return null;
   }
   
@@ -70,7 +70,9 @@ export async function sendDay0Email({
   };
 
   try {
-    console.log('📧 Sending Day 0 email to:', clientEmail);
+    if (import.meta.env.DEV) {
+      console.log('[EMAIL] Sending Day 0 email to:', clientEmail);
+    }
     
     const response = await emailjs.send(
       import.meta.env.VITE_EMAILJS_SERVICE_ID,
@@ -78,10 +80,9 @@ export async function sendDay0Email({
       templateParams
     );
 
-    console.log('✅ Day 0 email sent successfully:', response);
     return true;
   } catch (error) {
-    console.error('❌ Failed to send Day 0 email:', error);
+    console.error('[emailService] Failed to send Day 0 email:', error);
     throw error;
   }
 }
@@ -114,7 +115,9 @@ export async function sendAftercareEmail({
   };
 
   try {
-    console.log(`📧 Sending Day ${dayNumber} email to:`, clientEmail);
+    if (import.meta.env.DEV) {
+      console.log(`[EMAIL] Sending Day ${dayNumber} email to:`, clientEmail);
+    }
     
     const response = await emailjs.send(
       import.meta.env.VITE_EMAILJS_SERVICE_ID,
@@ -122,10 +125,9 @@ export async function sendAftercareEmail({
       templateParams
     );
 
-    console.log(`✅ Day ${dayNumber} email sent successfully:`, response);
     return true;
   } catch (error) {
-    console.error(`❌ Failed to send Day ${dayNumber} email:`, error);
+    console.error(`[emailService] Failed to send Day ${dayNumber} email:`, error);
     throw error;
   }
 }
@@ -142,7 +144,7 @@ export async function sendHealingEmail(client, artist, dayNumber, setupToken = n
   try {
     // Validate day number
     if (!TEMPLATE_MAP[dayNumber]) {
-      console.warn(`⚠️ No template for Day ${dayNumber}, skipping email`);
+      console.warn(`[emailService] No template for Day ${dayNumber}, skipping email`);
       return false;
     }
 
@@ -171,7 +173,7 @@ export async function sendHealingEmail(client, artist, dayNumber, setupToken = n
       dayNumber
     });
   } catch (error) {
-    console.error(`❌ Error sending Day ${dayNumber} email:`, error);
+    console.error(`[emailService] Error sending Day ${dayNumber} email:`, error);
     throw error;
   }
 }

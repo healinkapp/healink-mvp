@@ -21,7 +21,9 @@ function App() {
   useEffect(() => {
     // Wait for Firebase to restore auth session
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('🔐 Auth state changed:', user ? user.email : 'Not logged in');
+      if (import.meta.env.DEV) {
+        console.log('[App] Auth state changed:', user ? user.email : 'Not logged in');
+      }
       setAuthLoading(false);
     });
 

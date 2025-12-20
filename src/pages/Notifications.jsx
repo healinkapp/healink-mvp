@@ -44,7 +44,7 @@ function Notifications() {
       setNotifications(notifs);
       setLoading(false);
     }, (error) => {
-      console.error('Error loading notifications:', error);
+      console.error('[Notifications] Error loading notifications:', error);
       setLoading(false);
     });
 
@@ -57,7 +57,7 @@ function Notifications() {
         read: true
       });
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('[Notifications] Error marking notification as read:', error);
     }
   };
 
@@ -71,7 +71,7 @@ function Notifications() {
       );
       showToast('All notifications marked as read', 'success');
     } catch (error) {
-      console.error('Error marking all as read:', error);
+      console.error('[Notifications] Error marking all as read:', error);
       showToast('Failed to mark notifications as read', 'error');
     }
   };

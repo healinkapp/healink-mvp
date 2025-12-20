@@ -64,8 +64,8 @@ service cloud.firestore {
       // UPDATE ACCESS  
       // CRITICAL: Allow completing client setup (must be FIRST to catch early auth state)
       allow update: if resource.data.role == 'client' &&
-                       resource.data.accountSetup == false &&
-                       request.resource.data.accountSetup == true;
+                       resource.data.hasCompletedSetup == false &&
+                       request.resource.data.hasCompletedSetup == true;
       
       allow update: if isAuthenticated() && (
         // Artists can update their own data

@@ -12,11 +12,13 @@ import { db, getMessagingInstance } from '../config/firebase';
  */
 export async function requestPushPermission(userId) {
   try {
-    console.log('📱 Requesting push notification permission...');
+    if (import.meta.env.DEV) {
+      console.log('[PUSH] Requesting push notification permission...');
+    }
 
     // Check if browser supports notifications
     if (!('Notification' in window)) {
-      console.warn('⚠️ This browser does not support notifications');
+      console.warn('[pushService] This browser does not support notifications');
       return {
         success: false,
         error: 'Browser does not support notifications'
@@ -25,7 +27,7 @@ export async function requestPushPermission(userId) {
 
     // Check current permission status
     if (Notification.permission === 'denied') {
-      console.warn('⚠️ Notification permission was denied by user');
+      console.warn('[pushService] Notification permission was denied by user');
       return {
         success: false,
         error: 'Notification permission denied'
@@ -35,7 +37,7 @@ export async function requestPushPermission(userId) {
     // Get messaging instance
     const messaging = await getMessagingInstance();
     if (!messaging) {
-      console.warn('⚠️ Firebase Messaging not available');
+      console.warn('[pushService] Firebase Messaging not available');
       return {
         success: false,
         error: 'Firebase Messaging not supported'
@@ -46,20 +48,18 @@ export async function requestPushPermission(userId) {
     const permission = await Notification.requestPermission();
     
     if (permission !== 'granted') {
-      console.warn('⚠️ Notification permission not granted:', permission);
+      console.warn('[pushService] Notification permission not granted:', permission);
       return {
         success: false,
         error: `Permission ${permission}`
       };
     }
 
-    console.log('✅ Notification permission granted');
-
     // Get FCM token using VAPID key
     const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
     
     if (!vapidKey) {
-      console.error('❌ VAPID key not found in environment variables');
+      console.error('[pushService] VAPID key not found in environment variables');
       return {
         success: false,
         error: 'VAPID key not configured'
@@ -69,14 +69,16 @@ export async function requestPushPermission(userId) {
     const token = await getToken(messaging, { vapidKey });
 
     if (!token) {
-      console.error('❌ Failed to get FCM token');
+      console.error('[pushService] Failed to get FCM token');
       return {
         success: false,
         error: 'Failed to retrieve FCM token'
       };
     }
 
-    console.log('✅ FCM token obtained:', token.substring(0, 20) + '...');
+    if (import.meta.env.DEV) {
+      console.log('[PUSH] FCM token obtained:', token.substring(0, 20) + '...');
+    }
 
     // Save token to Firestore
     const userRef = doc(db, 'users', userId);
@@ -85,15 +87,13 @@ export async function requestPushPermission(userId) {
       fcmTokenUpdatedAt: serverTimestamp()
     });
 
-    console.log('✅ FCM token saved to Firestore');
-
     return {
       success: true,
       token: token
     };
 
   } catch (error) {
-    console.error('❌ Push permission request failed:', error);
+    console.error('[pushService] Push permission request failed:', error);
     return {
       success: false,
       error: error.message || 'Unknown error occurred'
@@ -111,13 +111,15 @@ export async function subscribeToPushMessages(callback) {
     const messaging = await getMessagingInstance();
     
     if (!messaging) {
-      console.warn('⚠️ Firebase Messaging not available for subscription');
+      console.warn('[pushService] Firebase Messaging not available for subscription');
       return () => {}; // Return empty unsubscribe function
     }
 
     // Listen for foreground messages
     const unsubscribe = onMessage(messaging, (payload) => {
-      console.log('📬 Foreground message received:', payload);
+      if (import.meta.env.DEV) {
+        console.log('[PUSH] Foreground message received:', payload);
+      }
 
       const { notification, data } = payload;
       
@@ -131,11 +133,10 @@ export async function subscribeToPushMessages(callback) {
       }
     });
 
-    console.log('✅ Subscribed to foreground messages');
     return unsubscribe;
 
   } catch (error) {
-    console.error('❌ Failed to subscribe to push messages:', error);
+    console.error('[pushService] Failed to subscribe to push messages:', error);
     return () => {}; // Return empty unsubscribe function
   }
 }
@@ -147,20 +148,16 @@ export async function subscribeToPushMessages(callback) {
  */
 export async function unsubscribePush(userId) {
   try {
-    console.log('🔕 Unsubscribing from push notifications...');
-
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       fcmToken: null,
       fcmTokenUpdatedAt: serverTimestamp()
     });
 
-    console.log('✅ FCM token removed from Firestore');
-
     return { success: true };
 
   } catch (error) {
-    console.error('❌ Failed to unsubscribe from push:', error);
+    console.error('[pushService] Failed to unsubscribe from push:', error);
     return {
       success: false,
       error: error.message || 'Failed to unsubscribe'
@@ -221,15 +218,13 @@ export async function sendTestNotification(title, body, options = {}) {
       ...options
     });
 
-    console.log('✅ Test notification displayed');
-
     // Auto-close after 5 seconds
     setTimeout(() => {
       notification.close();
     }, 5000);
 
   } catch (error) {
-    console.error('❌ Test notification failed:', error);
+    console.error('[pushService] Test notification failed:', error);
     throw error;
   }
 }
@@ -242,8 +237,6 @@ export async function sendTestNotification(title, body, options = {}) {
  * @returns {Promise<{success: boolean, token?: string, error?: string}>}
  */
 export async function refreshFCMToken(userId) {
-  console.log('🔄 Refreshing FCM token...');
-  
   // Same logic as requestPushPermission but for refresh
   return await requestPushPermission(userId);
 }

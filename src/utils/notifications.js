@@ -36,9 +36,12 @@ export async function createNotification({
       read: false,
       createdAt: serverTimestamp()
     });
-    console.log('✅ Notification created:', { type, title });
+    
+    if (import.meta.env.DEV) {
+      console.log('[notifications] Created:', { type, title });
+    }
   } catch (error) {
-    console.error('❌ Error creating notification:', error);
+    console.error('[notifications] Error creating notification:', error);
   }
 }
 

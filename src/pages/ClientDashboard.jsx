@@ -52,7 +52,7 @@ export default function ClientDashboard() {
         }
       }
     } catch (error) {
-      console.error('Permission error:', error);
+      console.error('[ClientDashboard] Permission error:', error);
       showToast('Failed to enable notifications', 'error');
     } finally {
       setRequestingPermission(false);
@@ -75,7 +75,6 @@ export default function ClientDashboard() {
       const role = await getUserRole(user.uid, user.email);
       
       if (role !== 'client') {
-        console.log('❌ Not a client, redirecting...');
         if (role === 'artist') {
           navigate('/dashboard');
         } else {
@@ -85,7 +84,6 @@ export default function ClientDashboard() {
         return;
       }
 
-      console.log('✅ Client Dashboard: Client authenticated:', user.email);
       setCheckingRole(false);
 
       try {
@@ -99,7 +97,7 @@ export default function ClientDashboard() {
         const snapshot = await getDocs(q);
         
         if (snapshot.empty) {
-          console.error('No client data found');
+          console.error('[ClientDashboard] No client data found');
           showToast('No account found. Please contact your artist.', 'error');
           setLoading(false);
           return;
@@ -109,7 +107,7 @@ export default function ClientDashboard() {
         setClientData(data);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching client data:', error);
+        console.error('[ClientDashboard] Error fetching client data:', error);
         showToast('Failed to load your data. Please try again.', 'error');
         setLoading(false);
       }

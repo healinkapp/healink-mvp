@@ -33,7 +33,6 @@ function Login() {
 
         // Use userId as document ID (critical for security rules)
         await setDoc(doc(db, 'users', userCredential.user.uid), userData);
-        console.log('✅ Artist account created:', userCredential.user.uid, userData);
 
         // Redirect to dashboard
         navigate('/dashboard');
@@ -63,7 +62,7 @@ function Login() {
         }
       }
     } catch (err) {
-      console.error('Login error:', err);
+      console.error('[Login] Login error:', err);
       
       // Translate Firebase error codes to user-friendly messages
       let errorMessage = 'Invalid email or password';
